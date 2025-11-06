@@ -38,3 +38,11 @@ services:
       # Optional, if Pi-hole should get some more processing time
       - SYS_NICE
     restart: unless-stopped
+
+networks:
+  default:
+    enable_ipv6: true
+    ipam:
+      config:
+        # IPv6 Subnetz: KORRIGIERT auf gültigen Hex-CIDR-Block
+        - subnet: fd00:1eef:cafe:1::/64 
