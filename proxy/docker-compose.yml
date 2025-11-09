@@ -28,6 +28,7 @@ services:
       certbot-init:
         condition: service_completed_successfully
         required: true
+    restart: unless-stopped      
   certbot:
     image: certbot/certbot
     entrypoint: /bin/sh
@@ -39,6 +40,7 @@ services:
     volumes:
       - cert_volume:/etc/letsencrypt
       - acme_challenge:/usr/share/nginx/html/.well-known
+    restart: unless-stopped      
 volumes:
   cert_volume:
   acme_challenge:
