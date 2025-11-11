@@ -23,6 +23,7 @@ services:
       FTLCONF_webserver_api_password: 'enjoying-engraved-emergency-aspire-dividable-brim-reissue-sprain-preset-headset'
       # If using Docker's default `bridge` network setting the dns listening mode should be set to 'all'
       FTLCONF_dns_listeningMode: 'all'
+      FTLCONF_dns_rateLimit_count: 5000
     # Volumes store your data between container upgrades
     volumes:
       # For persisting Pi-hole's databases and common configuration file
