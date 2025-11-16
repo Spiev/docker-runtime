@@ -1,0 +1,17 @@
+services:
+  freshrss:
+    image: lscr.io/linuxserver/freshrss:latest
+    container_name: freshrss
+    environment:
+      # PUID und PGID deines Benutzers (z.B. 1000 für den Standard-Pi-Nutzer)
+      - PUID=1000
+      - PGID=1000
+      # Wähle deine Zeitzone (z.B. Europe/Berlin)
+      - TZ=Europe/Berlin
+    volumes:
+      # Pfad zum lokalen Speicherort der Konfiguration (wichtig für persistente Daten)
+      - /opt/freshrss/config:/config
+    ports:
+      # Externe Port:Interner Port (Hier: Zugriff über Port 8080)
+      - 8080:80
+    restart: unless-stopped
