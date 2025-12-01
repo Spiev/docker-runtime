@@ -10,7 +10,7 @@ services:
       - TZ=Europe/Berlin
     volumes:
       # Pfad zum lokalen Speicherort der Konfiguration (wichtig für persistente Daten)
-      - /opt/freshrss/config:/config
+      - ./config:/config
     ports:
       # Externe Port:Interner Port (Hier: Zugriff über Port 8080)
       - 8080:80

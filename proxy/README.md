@@ -27,7 +27,9 @@ cp .env.example .env
 - Update DOMAIN and EMAIL in .env file:
 
 ```
-DOMAIN='example.com'
+DOMAIN1='example.com # Main Domain used for requesting certificate'
+DOMAIN2='example2.com # Alternate subject name`
+DOMAIN3='example3.com # Alternate subject name`
 EMAIL='test@example.com'
 ```
 - Start the Docker containers:
