@@ -25,10 +25,7 @@ services:
     container_name: matter-hub
     restart: unless-stopped
     network_mode: host
-    environment: # more options can be found in the configuration section
-      - HAMH_HOME_ASSISTANT_URL=http://192.168.178.113:8123/
-      - HAMH_HOME_ASSISTANT_ACCESS_TOKEN=ey....U
-      - HAMH_LOG_LEVEL=info
-      - HAMH_HTTP_PORT=8482
+    env_file:
+      - .env
     volumes:
       - $PWD/home-assistant-matter-hub:/data
