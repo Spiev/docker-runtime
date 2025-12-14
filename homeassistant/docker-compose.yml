@@ -32,3 +32,21 @@ services:
       - .env
     volumes:
       - $PWD/home-assistant-matter-hub:/data
+  music-assistant:
+    image: ghcr.io/music-assistant/server:latest # <<< Desired release version here (or use beta to get the latest beta version)
+    container_name: musicassistant
+    restart: unless-stopped
+    # Network mode must be set to host for MA to work correctly
+    network_mode: "host"
+    volumes:
+      - ./musicassistant/data:/data/
+    # privileged caps (and security-opt) needed to mount smb folders within the container
+    cap_add:
+      - SYS_ADMIN
+      - DAC_READ_SEARCH
+    security_opt:
+      - apparmor:unconfined
+    environment:
+      # Provide logging level as environment variable.
+      # default=info, possible=(critical, error, warning, info, debug)
+      - LOG_LEVEL=info
