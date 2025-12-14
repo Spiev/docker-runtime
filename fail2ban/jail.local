@@ -1,0 +1,5 @@
+# --- Füge diesen Block am Ende der Datei hinzu ---
+
+[sshd]
+# Deaktiviert das sshd-Jail, das die Fehlermeldung verursacht hat.
+enabled = false
