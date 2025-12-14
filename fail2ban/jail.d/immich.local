@@ -1,0 +1,18 @@
+[immich]
+# Jail aktivieren
+enabled = true
+ignoreip = 127.0.0.1/8 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
+# Die Log-Datei, die wir im ersten Schritt auf den Host gemountet haben
+logpath = /home/stefan/docker/proxy/nginx/logs/access.log
+# Den in Schritt 3 erstellten Filter verwenden
+filter = nginx-immich-proxy
+# Wie lange der Client gesperrt wird (z.B. 1 Stunde = 3600 Sekunden)
+bantime = 3600
+# Maximale Fehlversuche
+maxretry = 5
+# Überwachungszeitraum, in dem die maxretry erreicht werden muss
+findtime = 600
+# WICHTIG: Die Chain muss an den Docker-Traffic angepasst werden.
+# Die Chain DOCKER-USER sorgt dafür, dass die Regel VOR dem Docker-Routing greift.
+# Dies sperrt die IP für ALLE Docker-Container/Webdienste.
+chain = DOCKER-USER
