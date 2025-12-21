@@ -20,7 +20,9 @@ services:
       # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones, e.g:
       TZ: 'Europe/London'
       # Set a password to access the web interface. Not setting one will result in a random password being assigned
-      FTLCONF_webserver_api_password: 'enjoying-engraved-emergency-aspire-dividable-brim-reissue-sprain-preset-headset'
+      # FTLCONF_webserver_api_password: '<secret password to set>'
+      # you can get the password with "docker logs pihole | grep random password"
+        
       # If using Docker's default `bridge` network setting the dns listening mode should be set to 'all'
       FTLCONF_dns_listeningMode: 'all'
       FTLCONF_dns_rateLimit_count: 5000
