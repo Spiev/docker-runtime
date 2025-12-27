@@ -32,11 +32,12 @@ while IFS= read -r jail; do
     [ -z "$jail" ] && continue
 
     STATUS=$(sudo fail2ban-client status "$jail" 2>/dev/null)
-    BANNED=$(echo "$STATUS" | grep "Currently banned:" | awk '{print $4}')
-    FAILED=$(echo "$STATUS" | grep "Currently failed:" | awk '{print $4}')
+    BANNED=$(echo "$STATUS" | grep "Currently banned:" | awk '{print $NF}')
+    FAILED=$(echo "$STATUS" | grep "Currently failed:" | awk '{print $NF}')
 
-    BANNED=${BANNED:-0}
-    FAILED=${FAILED:-0}
+    # Validate numeric values
+    BANNED=$(echo "$BANNED" | grep -E '^[0-9]+$' || echo "0")
+    FAILED=$(echo "$FAILED" | grep -E '^[0-9]+$' || echo "0")
 
     TOTAL_BANNED=$((TOTAL_BANNED + BANNED))
     TOTAL_FAILED=$((TOTAL_FAILED + FAILED))
