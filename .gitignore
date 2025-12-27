@@ -10,9 +10,10 @@ homeassistant/logs/
 homeassistant/mosquitto/
 homeassistant/musicassistant/
 immich/library/
+immich/postgres/
 paperless/library/
 paperless/redisdata/
+paperless/postgres/
 pihole/etc-pihole/
 proxy/logs/
 proxy/nginx/static/
-proxy/scripts/*
