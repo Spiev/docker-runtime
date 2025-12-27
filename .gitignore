@@ -2,3 +2,16 @@
 .env
 proxy/nginx/logs/
 CLAUDE.md
+freshrss/config/
+homeassistant/home-assistant-matter-hub/
+homeassistant/homeassistant/
+homeassistant/logs/
+homeassistant/mosquitto/
+homeassistant/musicassistant/
+immich/library/
+paperless/library/
+paperless/redisdata/
+pihole/etc-pihole/
+proxy/logs/
+proxy/nginx/static/
+proxy/scripts/*
