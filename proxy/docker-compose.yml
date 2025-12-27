@@ -11,7 +11,7 @@ services:
     volumes:
       - cert_volume:/etc/letsencrypt
   nginx:
-    image: nginx
+    image: nginx:stable
     entrypoint: /bin/sh
     command: -c 'while :; do sleep 6h && wait $${!}; nginx -s reload; done & /docker-entrypoint.sh nginx -g "daemon off;error_log /dev/stdout debug;"'
     ports:
