@@ -65,15 +65,41 @@ sudo cp fail2ban/filter.d/*.conf /etc/fail2ban/filter.d/
 sudo cp fail2ban/jail.d/*.local /etc/fail2ban/jail.d/
 sudo cp fail2ban/jail.local /etc/fail2ban/jail.local
 
-# 2. Test configuration
+# 2. Copy helper scripts to user bin
+sudo cp fail2ban/fail2ban-status.sh /usr/local/bin/fail2ban-status
+sudo cp fail2ban/fail2ban-motd.sh /usr/local/bin/fail2ban-motd
+sudo chmod +x /usr/local/bin/fail2ban-status
+sudo chmod +x /usr/local/bin/fail2ban-motd
+
+# 3. Test configuration
 sudo fail2ban-client -t
 
-# 3. Restart fail2ban
+# 4. Restart fail2ban
 sudo systemctl restart fail2ban
 
-# 4. Verify jails are running
+# 5. Verify jails are running
 sudo fail2ban-client status
+
+# 6. Test status script
+sudo fail2ban-status
 ```
+
+### Enable Login Banner (Optional)
+
+To see fail2ban status automatically on SSH login:
+
+```bash
+# Add to your ~/.bashrc
+echo "" >> ~/.bashrc
+echo "# Fail2ban status on login" >> ~/.bashrc
+echo "sudo /usr/local/bin/fail2ban-motd" >> ~/.bashrc
+
+# Or add to /etc/profile.d/ for all users (requires sudo)
+sudo cp fail2ban/fail2ban-motd.sh /etc/profile.d/fail2ban-motd.sh
+sudo chmod +x /etc/profile.d/fail2ban-motd.sh
+```
+
+**Note:** The login banner only shows if there are banned IPs or failed attempts.
 
 Expected output:
 ```
@@ -101,27 +127,68 @@ sudo systemctl reload fail2ban
 
 ## Monitoring & Maintenance
 
-### Check Active Jails
+### Quick Status Overview (Recommended) ⭐
+
+```bash
+# Compact overview of all jails
+sudo fail2ban-status
+```
+
+**Example output:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Fail2ban Status Overview
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+JAIL                      BANNED   FAILED  TOTAL BAN  TOTAL FAIL
+─────────────────────────────────────────────────────────────────
+✓  immich-auth                 0        0          2          15
+⚠  immich-rate-limit           1        0          3          42
+✓  immich-scan                 0        0          0           0
+✓  paperless-auth              0        2          1           8
+✓  paperless-rate-limit        0        0          0           0
+✓  paperless-scan              0        0          0           0
+✓  freshrss-auth               0        0          0           0
+✓  freshrss-rate-limit         0        0          0           0
+✓  freshrss-scan               0        0          1           5
+✓  recidive                    0        0          0           0
+─────────────────────────────────────────────────────────────────
+TOTAL (10 jails)               1        2
+
+⚠ 1 IP(s) currently banned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Verbose mode (shows banned IPs and recent activity):**
+```bash
+sudo fail2ban-status --verbose
+```
+
+### Native fail2ban Commands
+
+#### Check Active Jails
 ```bash
 sudo fail2ban-client status
 ```
 
-### Check Specific Jail
+#### Check Specific Jail
 ```bash
 sudo fail2ban-client status immich-auth
 ```
 
-### View Banned IPs
+#### View Banned IPs
 ```bash
 sudo fail2ban-client banned
 ```
 
-### Unban an IP
+#### Unban an IP
 ```bash
 sudo fail2ban-client unban 192.0.2.123
 ```
 
-### Test Filter Against Logs
+### Test Filters Against Logs
+
 ```bash
 # Test auth-failed filter
 sudo fail2ban-regex /home/stefan/docker/proxy/nginx/logs/access.log \
@@ -130,9 +197,14 @@ sudo fail2ban-regex /home/stefan/docker/proxy/nginx/logs/access.log \
 # Test rate-limit filter
 sudo fail2ban-regex /home/stefan/docker/proxy/nginx/logs/access.log \
   /etc/fail2ban/filter.d/nginx-rate-limit-abuse.conf
+
+# Test scanning filter
+sudo fail2ban-regex /home/stefan/docker/proxy/nginx/logs/access.log \
+  /etc/fail2ban/filter.d/nginx-forbidden-scan.conf
 ```
 
 ### Monitor Fail2ban Activity
+
 ```bash
 # Live log monitoring
 sudo tail -f /var/log/fail2ban.log
