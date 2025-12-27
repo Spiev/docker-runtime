@@ -1,13 +1,13 @@
 # ============================================================================
-# Fail2Ban Jail for Immich (DOMAIN1)
+# Fail2Ban Jail for FreshRSS (DOMAIN3)
 # ============================================================================
-# Protects Immich photo management from:
-# - Brute-force login attempts (401 on /api/auth, /api/user)
+# Protects FreshRSS feed reader from:
+# - Brute-force login attempts (401 on /login, /api/greader)
 # - Rate limiting abuse (503 responses)
 # - Path scanning/reconnaissance (403/404 on suspicious paths)
 # ============================================================================
 
-[immich-auth]
+[freshrss-auth]
 enabled = true
 # Ignore private networks
 ignoreip = 127.0.0.1/8 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
@@ -24,7 +24,7 @@ findtime = 600
 # Target DOCKER-USER chain (blocks traffic before Docker routing)
 chain = DOCKER-USER
 
-[immich-rate-limit]
+[freshrss-rate-limit]
 enabled = true
 ignoreip = 127.0.0.1/8 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
 logpath = /home/stefan/docker/proxy/nginx/logs/access.log
@@ -36,7 +36,7 @@ maxretry = 20
 findtime = 300
 chain = DOCKER-USER
 
-[immich-scan]
+[freshrss-scan]
 enabled = true
 ignoreip = 127.0.0.1/8 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
 logpath = /home/stefan/docker/proxy/nginx/logs/access.log

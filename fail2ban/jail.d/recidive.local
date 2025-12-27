@@ -1,0 +1,37 @@
+# ============================================================================
+# Fail2Ban Recidive Jail
+# ============================================================================
+# Bans repeat offenders who have been banned multiple times before.
+# This jail monitors the fail2ban log itself and looks for IPs that have
+# been banned by other jails. If an IP gets banned multiple times, it gets
+# a much longer ban (or permanent).
+#
+# This is the "three strikes and you're out" jail.
+# ============================================================================
+
+[recidive]
+enabled = true
+
+# Ignore private networks (they can't be malicious attackers)
+ignoreip = 127.0.0.1/8 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
+
+# Monitor the fail2ban log itself
+logpath = /var/log/fail2ban.log
+
+# Use the built-in recidive filter (comes with fail2ban)
+filter = recidive
+
+# Ban time: 1 week (604800 seconds)
+# For persistent attackers, you could set this to -1 (permanent ban)
+bantime = 604800
+
+# If an IP gets banned 3 times within 1 day, trigger recidive
+maxretry = 3
+findtime = 86400
+
+# Target DOCKER-USER chain (blocks all Docker traffic)
+chain = DOCKER-USER
+
+# Optional: Send notification when recidive triggers
+# Uncomment if you have email/notification setup
+#action = %(action_mwl)s
