@@ -47,16 +47,16 @@ get_jail_info() {
     local jail=$1
     local status=$(sudo fail2ban-client status "$jail" 2>/dev/null)
 
-    local currently_failed=$(echo "$status" | grep "Currently failed:" | awk '{print $4}')
-    local currently_banned=$(echo "$status" | grep "Currently banned:" | awk '{print $4}')
-    local total_failed=$(echo "$status" | grep "Total failed:" | awk '{print $4}')
-    local total_banned=$(echo "$status" | grep "Total banned:" | awk '{print $4}')
+    local currently_failed=$(echo "$status" | grep "Currently failed:" | awk '{print $NF}')
+    local currently_banned=$(echo "$status" | grep "Currently banned:" | awk '{print $NF}')
+    local total_failed=$(echo "$status" | grep "Total failed:" | awk '{print $NF}')
+    local total_banned=$(echo "$status" | grep "Total banned:" | awk '{print $NF}')
 
-    # Default to 0 if empty
-    currently_failed=${currently_failed:-0}
-    currently_banned=${currently_banned:-0}
-    total_failed=${total_failed:-0}
-    total_banned=${total_banned:-0}
+    # Default to 0 if empty or non-numeric
+    currently_failed=$(echo "$currently_failed" | grep -E '^[0-9]+$' || echo "0")
+    currently_banned=$(echo "$currently_banned" | grep -E '^[0-9]+$' || echo "0")
+    total_failed=$(echo "$total_failed" | grep -E '^[0-9]+$' || echo "0")
+    total_banned=$(echo "$total_banned" | grep -E '^[0-9]+$' || echo "0")
 
     echo "$currently_banned|$currently_failed|$total_banned|$total_failed"
 }
