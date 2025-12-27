@@ -69,9 +69,6 @@ JSON="{\"current\":\"$CURRENT_VERSION\",\"platform\":\"$PLATFORM\",\"local_diges
 
 echo $JSON
 
-echo $MQTT_USER 
-echo $MQTT_PASSWORD
-
 # MQTT
 mosquitto_pub -d -h localhost -p 1883 \
   -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
