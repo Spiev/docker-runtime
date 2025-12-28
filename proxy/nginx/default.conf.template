@@ -240,7 +240,7 @@ server {
         limit_req zone=login_limit burst=10 nodelay;
         limit_req zone=api_limit burst=50 nodelay;
 
-        include /etc/nginx/includes/proxy-headers-extended.conf;
+        include /etc/nginx/includes/proxy-headers.conf;
         proxy_pass http://paperless_backend;
     }
 
@@ -248,7 +248,7 @@ server {
     location / {
         limit_req zone=general_limit burst=20 nodelay;
 
-        include /etc/nginx/includes/proxy-headers-extended.conf;
+        include /etc/nginx/includes/proxy-headers.conf;
         proxy_pass http://paperless_backend;
     }
 }
@@ -310,7 +310,7 @@ server {
         limit_req zone=login_limit burst=10 nodelay;
         limit_req zone=general_limit burst=20 nodelay;
 
-        include /etc/nginx/includes/proxy-headers-extended.conf;
+        include /etc/nginx/includes/proxy-headers.conf;
         proxy_pass http://freshrss_backend;
     }
 
@@ -318,7 +318,7 @@ server {
     location / {
         limit_req zone=general_limit burst=20 nodelay;
 
-        include /etc/nginx/includes/proxy-headers-extended.conf;
+        include /etc/nginx/includes/proxy-headers.conf;
         # The final `/` is important for proper proxying
         proxy_pass http://freshrss_backend/;
     }
