@@ -19,6 +19,7 @@ services:
       - 443:443
     volumes:
       - ./nginx:/etc/nginx/templates # to configure nginx
+      - ./nginx/includes:/etc/nginx/includes # modular config includes
       - ./nginx/static:/var/www/html # provide static web site
       - ./nginx/logs:/var/log/nginx # store access logs to host system
       - cert_volume:/etc/letsencrypt
