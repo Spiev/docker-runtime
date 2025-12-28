@@ -8,6 +8,15 @@ CLAUDE.md
 .mqtt_credentials
 .restic.env
 
+# Production scripts (contain environment-specific paths)
+# Only .example files are tracked
+scripts/backup-to-hdd.sh
+scripts/nginx_update.sh
+fail2ban/test-fail2ban.sh
+
+# Dashboard config (contains internal IPs and entity IDs)
+dashboard-config.yaml
+
 # Allgemeine Config und Bewegungsdaten, die anders gesichert werden
 freshrss/config/
 homeassistant/homeassistant/
