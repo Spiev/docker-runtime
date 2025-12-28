@@ -2,6 +2,9 @@
 CONTAINER_NAME="proxy-nginx-1"
 IMAGE_TAG="nginx:stable"
 
+# For logging details
+echo "Script started at $(date --iso-8601=ns)"
+
 # Load MQTT credentials from secure file
 SCRIPT_DIR="$(dirname "$0")"
 CREDENTIALS_FILE="$SCRIPT_DIR/.mqtt_credentials"
