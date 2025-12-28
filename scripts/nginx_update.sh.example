@@ -1,60 +1,264 @@
 #!/bin/bash
-set -e  # Exit bei Fehler
+set -euo pipefail  # Exit on error, undefined variables, and pipe failures
+
+# ============================================================================
+# Nginx Update Script with MQTT Monitoring
+# ============================================================================
+# This script updates the nginx:stable Docker image and sends status updates
+# to Home Assistant via MQTT for monitoring and alerting.
+#
+# Usage:
+#   ./nginx_update.sh
+#
+# Requirements:
+#   - Docker with compose plugin
+#   - mosquitto_pub (mosquitto-clients package)
+#   - jq (JSON processor)
+#   - .mqtt_credentials file with MQTT_USER and MQTT_PASSWORD
+# ============================================================================
+
+# For logging details
+echo "Nginx update script started at $(date --iso-8601=ns)"
 
 # ============================================================================
 # Configuration - Adjust these for your environment
 # ============================================================================
 
+SCRIPT_DIR="$(dirname "$0")"
 IMAGE_TAG="nginx:stable"
+
 # Path to your docker-compose directory for the nginx proxy
 # Adjust this to match your setup (e.g., /home/user/docker/proxy)
 COMPOSE_DIR="${COMPOSE_DIR:-$HOME/docker/proxy}"
 
-# For logging details
-echo "Script started at $(date --iso-8601=ns)"
+# MQTT Topics for Home Assistant
+MQTT_HOST="localhost"
+MQTT_PORT="1883"
+STATE_TOPIC="homeassistant/sensor/nginx_update_status/state"
+ATTRIBUTES_TOPIC="homeassistant/sensor/nginx_update_status/attributes"
+DISCOVERY_TOPIC="homeassistant/sensor/nginx_update_status/config"
 
-echo "🔍 Prüfe neuestes nginx:stable arm64 Image..."
+# Device info for Home Assistant
+DEVICE_ID="nginx_update"
+DEVICE_NAME="Nginx Update"
 
-# Hole neuesten arm64-Digest
+# Track script start time for duration calculation
+START_TIME=$(date +%s)
+
+# ============================================================================
+# Load MQTT Credentials
+# ============================================================================
+
+MQTT_CREDENTIALS="$SCRIPT_DIR/.mqtt_credentials"
+if [[ ! -f "$MQTT_CREDENTIALS" ]]; then
+    echo "ERROR: MQTT credentials file not found at $MQTT_CREDENTIALS" >&2
+    echo "Please create it from .mqtt_credentials.example" >&2
+    exit 1
+fi
+
+# Check file permissions (should be 600)
+MQTT_PERMS=$(stat -c %a "$MQTT_CREDENTIALS" 2>/dev/null || stat -f %A "$MQTT_CREDENTIALS")
+if [[ "$MQTT_PERMS" != "600" ]]; then
+    echo "WARNING: Insecure permissions on $MQTT_CREDENTIALS (found: $MQTT_PERMS, expected: 600)" >&2
+fi
+
+source "$MQTT_CREDENTIALS"
+
+# Validate required MQTT variables are set
+if [[ -z "${MQTT_USER:-}" ]] || [[ -z "${MQTT_PASSWORD:-}" ]]; then
+    echo "ERROR: MQTT_USER or MQTT_PASSWORD not set in $MQTT_CREDENTIALS" >&2
+    exit 1
+fi
+
+# ============================================================================
+# Helper Functions - MQTT
+# ============================================================================
+
+# Send MQTT Discovery message (only needed once, but idempotent)
+send_discovery() {
+    local discovery_payload=$(cat <<EOF
+{
+  "name": "Status",
+  "object_id": "nginx_update_status",
+  "unique_id": "nginx_update_status",
+  "state_topic": "$STATE_TOPIC",
+  "json_attributes_topic": "$ATTRIBUTES_TOPIC",
+  "icon": "mdi:update",
+  "device": {
+    "identifiers": ["$DEVICE_ID"],
+    "name": "$DEVICE_NAME",
+    "model": "Nginx Update Script",
+    "manufacturer": "Homelab"
+  }
+}
+EOF
+)
+    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" \
+      -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
+      -t "$DISCOVERY_TOPIC" \
+      -m "$discovery_payload" \
+      -r  # Retain discovery message
+}
+
+# Send state update
+send_state() {
+    local state="$1"
+    echo "MQTT: Sending state: $state"
+    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" \
+      -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
+      -t "$STATE_TOPIC" \
+      -m "$state"
+}
+
+# Send attributes (JSON with update details)
+send_attributes() {
+    local attributes="$1"
+    echo "MQTT: Sending attributes: $attributes"
+    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" \
+      -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
+      -t "$ATTRIBUTES_TOPIC" \
+      -m "$attributes"
+}
+
+# ============================================================================
+# Cleanup and Error Handling
+# ============================================================================
+
+cleanup() {
+    local exit_code=$?
+    local end_time=$(date +%s)
+    local duration=$((end_time - START_TIME))
+
+    if [ $exit_code -ne 0 ]; then
+        echo "ERROR: Nginx update failed with exit code $exit_code"
+
+        local error_json=$(cat <<EOF
+{
+  "last_run": "$(date --iso-8601=seconds)",
+  "duration_seconds": $duration,
+  "error": "Update failed with exit code $exit_code",
+  "last_error_time": "$(date --iso-8601=seconds)",
+  "old_version": "${OLD_VERSION:-unknown}",
+  "old_digest": "${CURRENT_DIGEST:-unknown}"
+}
+EOF
+)
+        send_state "failed"
+        send_attributes "$error_json"
+    fi
+}
+
+trap cleanup EXIT
+
+# ============================================================================
+# Main Update Logic
+# ============================================================================
+
+# Send discovery message (idempotent - safe to call every time)
+send_discovery
+
+# Send initial state
+send_state "running"
+
+echo "🔍 Checking for latest nginx:stable arm64 image..."
+
+# Get latest arm64 digest from Docker Hub
 LATEST_DIGEST=$(docker manifest inspect $IMAGE_TAG 2>/dev/null | \
   jq -r '.manifests[] | select((.platform.architecture == "arm64" or .platform.architecture == "aarch64") and .platform.os == "linux") | .digest' | \
   head -n1)
 
 if [ -z "$LATEST_DIGEST" ]; then
-  echo "❌ Fehler: Konnte Digest nicht ermitteln"
+  echo "❌ ERROR: Could not determine digest"
   exit 1
 fi
 
-echo "📦 Neuester Digest: $LATEST_DIGEST"
+echo "📦 Latest digest: $LATEST_DIGEST"
 
-# Prüfe ob schon aktuell
+# Check current digest
 CURRENT_DIGEST=$(docker image inspect $IMAGE_TAG --format='{{index .RepoDigests 1}}' 2>/dev/null | cut -d'@' -f2)
 
+# Get current version before potential update
+# Note: Adjust container name if different (e.g., nginx-nginx-1, proxy_nginx_1)
+CONTAINER_NAME=$(docker compose -f "$COMPOSE_DIR/docker-compose.yml" ps nginx --format json 2>/dev/null | jq -r '.[0].Name' 2>/dev/null || echo "proxy-nginx-1")
+OLD_VERSION=$(docker exec $CONTAINER_NAME nginx -v 2>&1 | awk -F'/' '{print $2}' || echo "unknown")
+
+# Check if already up to date
 if [ "$CURRENT_DIGEST" = "$LATEST_DIGEST" ]; then
-  echo "✅ Image ist bereits aktuell!"
+  echo "✅ Image is already up to date!"
+
+  # Calculate duration
+  END_TIME=$(date +%s)
+  DURATION=$((END_TIME - START_TIME))
+
+  # Send success state with "already up to date" info
+  local success_json=$(cat <<EOF
+{
+  "last_run": "$(date --iso-8601=seconds)",
+  "duration_seconds": $DURATION,
+  "old_version": "$OLD_VERSION",
+  "new_version": "$OLD_VERSION",
+  "old_digest": "${CURRENT_DIGEST:0:12}",
+  "new_digest": "${LATEST_DIGEST:0:12}",
+  "update_needed": false,
+  "last_success_time": "$(date --iso-8601=seconds)",
+  "last_error_time": null
+}
+EOF
+)
+  send_state "already_up_to_date"
+  send_attributes "$success_json"
+
+  # Disable trap (we handled success manually)
+  trap - EXIT
   exit 0
 fi
 
-echo "⬇️  Pulling neues Image by Digest..."
+echo "⬇️  Pulling new image by digest..."
 docker pull nginx@$LATEST_DIGEST
 
-echo "🏷️  Tagge als nginx:stable..."
+echo "🏷️  Tagging as nginx:stable..."
 docker tag nginx@$LATEST_DIGEST $IMAGE_TAG
 
-echo "🔄 Stoppe Container..."
+echo "🔄 Stopping container..."
 cd $COMPOSE_DIR
 docker compose down nginx
 
-echo "🚀 Starte Container neu..."
+echo "🚀 Starting container..."
 docker compose up -d nginx
 
-echo "🧹 Aufräumen alter Images..."
+echo "🧹 Cleaning up old images..."
 docker image prune -f
 
-echo "✅ Update abgeschlossen!"
+echo "✅ Update completed!"
 
-# Zeige neue Version
-# Note: Adjust container name if different (e.g., nginx-nginx-1, proxy_nginx_1)
-CONTAINER_NAME=$(docker compose ps nginx --format json | jq -r '.[0].Name' 2>/dev/null || echo "proxy-nginx-1")
-NEW_VERSION=$(docker exec $CONTAINER_NAME nginx -v 2>&1 | awk -F'/' '{print $2}')
-echo "📌 Neue Version: $NEW_VERSION"
+# Get new version
+NEW_VERSION=$(docker exec $CONTAINER_NAME nginx -v 2>&1 | awk -F'/' '{print $2}' || echo "unknown")
+echo "📌 New version: $NEW_VERSION (was: $OLD_VERSION)"
+
+# Calculate duration
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
+
+# Send success state with full update details
+success_json=$(cat <<EOF
+{
+  "last_run": "$(date --iso-8601=seconds)",
+  "duration_seconds": $DURATION,
+  "old_version": "$OLD_VERSION",
+  "new_version": "$NEW_VERSION",
+  "old_digest": "${CURRENT_DIGEST:0:12}",
+  "new_digest": "${LATEST_DIGEST:0:12}",
+  "update_needed": true,
+  "last_success_time": "$(date --iso-8601=seconds)",
+  "last_error_time": null
+}
+EOF
+)
+
+send_state "success"
+send_attributes "$success_json"
+
+# Disable trap (we handled success manually)
+trap - EXIT
+
+echo "Script completed at $(date --iso-8601=ns)"
