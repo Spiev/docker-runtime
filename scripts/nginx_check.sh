@@ -18,7 +18,7 @@ fi
 PLATFORM=$(docker version --format '{{.Server.Arch}}')
 
 # Digests
-LOCAL_DIGEST=$(docker image inspect $IMAGE_TAG --format='{{index .RepoDigests 0}}' 2>/dev/null | cut -d'@' -f2)
+LOCAL_DIGEST=$(docker image inspect $IMAGE_TAG --format='{{index .RepoDigests 1}}' 2>/dev/null | cut -d'@' -f2)
 REMOTE_DIGEST=$(docker manifest inspect $IMAGE_TAG 2>/dev/null | \
   jq -r '.manifests[] | select((.platform.architecture == "arm64" or .platform.architecture == "aarch64") and .platform.os == "linux") | .digest' | \
   head -n1)
