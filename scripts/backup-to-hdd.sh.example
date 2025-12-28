@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e  # Exit on error
+set -euo pipefail  # Exit on error, undefined variables, and pipe failures
 
 # For logging details
 echo "Backup script started at $(date --iso-8601=ns)"
@@ -12,7 +12,7 @@ SCRIPT_DIR="$(dirname "$0")"
 RESTIC_REPO="/mnt/sda1/restic-repo"
 HDD_DEVICE="/dev/sda1"
 HDD_MOUNT="/mnt/sda1"
-DOCKER_BASE="$HOME/docker"
+DOCKER_BASE="/home/stefan/docker"
 
 # MQTT Topics
 MQTT_HOST="localhost"
@@ -29,23 +29,47 @@ DEVICE_NAME="Restic Backup"
 # Load Credentials
 # ============================================================================
 
-# Load MQTT credentials
+# Load MQTT credentials with validation
 MQTT_CREDENTIALS="$SCRIPT_DIR/.mqtt_credentials"
-if [ -f "$MQTT_CREDENTIALS" ]; then
-    source "$MQTT_CREDENTIALS"
-else
+if [[ ! -f "$MQTT_CREDENTIALS" ]]; then
     echo "ERROR: MQTT credentials file not found at $MQTT_CREDENTIALS" >&2
     echo "Please create it from .mqtt_credentials.example" >&2
     exit 1
 fi
 
-# Load Restic password
+# Check file permissions (should be 600)
+MQTT_PERMS=$(stat -c %a "$MQTT_CREDENTIALS")
+if [[ "$MQTT_PERMS" != "600" ]]; then
+    echo "WARNING: Insecure permissions on $MQTT_CREDENTIALS (found: $MQTT_PERMS, expected: 600)" >&2
+fi
+
+source "$MQTT_CREDENTIALS"
+
+# Validate required MQTT variables are set
+if [[ -z "${MQTT_USER:-}" ]] || [[ -z "${MQTT_PASSWORD:-}" ]]; then
+    echo "ERROR: MQTT_USER or MQTT_PASSWORD not set in $MQTT_CREDENTIALS" >&2
+    exit 1
+fi
+
+# Load Restic password with validation
 RESTIC_ENV="$SCRIPT_DIR/.restic.env"
-if [ -f "$RESTIC_ENV" ]; then
-    source "$RESTIC_ENV"
-else
+if [[ ! -f "$RESTIC_ENV" ]]; then
     echo "ERROR: Restic credentials file not found at $RESTIC_ENV" >&2
     echo "Please create it from .restic.env.example" >&2
+    exit 1
+fi
+
+# Check file permissions (should be 600)
+RESTIC_PERMS=$(stat -c %a "$RESTIC_ENV")
+if [[ "$RESTIC_PERMS" != "600" ]]; then
+    echo "WARNING: Insecure permissions on $RESTIC_ENV (found: $RESTIC_PERMS, expected: 600)" >&2
+fi
+
+source "$RESTIC_ENV"
+
+# Validate required variables are set
+if [[ -z "${RESTIC_PASSWORD:-}" ]]; then
+    echo "ERROR: RESTIC_PASSWORD is not set in $RESTIC_ENV" >&2
     exit 1
 fi
 
@@ -133,6 +157,10 @@ EOF
         echo "Unmounting $HDD_MOUNT..."
         sudo umount "$HDD_MOUNT" 2>/dev/null || true
     fi
+
+    # Clean credentials from memory (security best practice)
+    echo "Removing secrets from memory..."
+    unset RESTIC_PASSWORD MQTT_PASSWORD
 }
 
 trap cleanup EXIT
@@ -150,9 +178,9 @@ send_discovery
 send_state "running"
 send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Starting backup...\"}"
 
-# Mount HDD
+# Mount HDD with correct permissions
 echo "Mounting $HDD_DEVICE to $HDD_MOUNT..."
-sudo mount "$HDD_DEVICE" "$HDD_MOUNT" -o uid=$UID
+sudo mount "$HDD_DEVICE" "$HDD_MOUNT" -o rw,uid=$UID,user,dmask=007,fmask=117
 
 # Initialize counters
 TOTAL_FILES_NEW=0
