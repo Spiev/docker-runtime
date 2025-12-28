@@ -191,7 +191,7 @@ if [ "$CURRENT_DIGEST" = "$LATEST_DIGEST" ]; then
   DURATION=$((END_TIME - START_TIME))
 
   # Send success state with "already up to date" info
-  local success_json=$(cat <<EOF
+  success_json=$(cat <<EOF
 {
   "last_run": "$(date --iso-8601=seconds)",
   "duration_seconds": $DURATION,
