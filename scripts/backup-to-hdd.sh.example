@@ -12,7 +12,8 @@ SCRIPT_DIR="$(dirname "$0")"
 RESTIC_REPO="/mnt/sda1/restic-repo"
 HDD_DEVICE="/dev/sda1"
 HDD_MOUNT="/mnt/sda1"
-DOCKER_BASE="/home/stefan/docker"
+# Adjust this path to your Docker directory
+DOCKER_BASE="${DOCKER_BASE:-$HOME/docker}"
 
 # MQTT Topics
 MQTT_HOST="localhost"
