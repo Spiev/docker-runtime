@@ -17,9 +17,9 @@ DOCKER_BASE="/home/stefan/docker"
 # MQTT Topics
 MQTT_HOST="localhost"
 MQTT_PORT="1883"
-STATE_TOPIC="homeassistant/sensor/backup_restic/state"
-ATTRIBUTES_TOPIC="homeassistant/sensor/backup_restic/attributes"
-DISCOVERY_TOPIC="homeassistant/sensor/backup_restic/config"
+STATE_TOPIC="homeassistant/sensor/restic_backup_status/state"
+ATTRIBUTES_TOPIC="homeassistant/sensor/restic_backup_status/attributes"
+DISCOVERY_TOPIC="homeassistant/sensor/restic_backup_status/config"
 
 # Device info for Home Assistant
 DEVICE_ID="restic_backup"
@@ -82,7 +82,7 @@ send_discovery() {
     local discovery_payload=$(cat <<EOF
 {
   "name": "Restic Backup Status",
-  "unique_id": "${DEVICE_ID}_status",
+  "unique_id": "restic_backup_status",
   "state_topic": "$STATE_TOPIC",
   "json_attributes_topic": "$ATTRIBUTES_TOPIC",
   "icon": "mdi:backup-restore",
