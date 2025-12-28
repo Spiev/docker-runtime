@@ -1,239 +1,325 @@
 # ============================================================================
-# Rate Limiting Zones (Brute-Force Protection)
+# Nginx Reverse Proxy Configuration
 # ============================================================================
+# This configuration file manages reverse proxy settings for three services:
+# - DOMAIN1: Immich (Photo Management)
+# - DOMAIN2: Paperless (Document Management)
+# - DOMAIN3: FreshRSS (RSS Feed Reader)
+#
+# Environment variables (set in docker-compose.yml from .env):
+# - ${DOMAIN1}, ${DOMAIN2}, ${DOMAIN3}: Domain names for each service
+#
+# Maintainer: Stefan
+# Last updated: 2025-12-28
+# ============================================================================
+
+
+# ============================================================================
+# RATE LIMITING ZONES
+# ============================================================================
+# These zones define global rate limiting rules to protect against abuse.
+# Limits are applied per client IP address ($binary_remote_addr).
+# ============================================================================
+
 # Login attempts: max 5 per minute per IP
+# Protects authentication endpoints from brute-force attacks
 limit_req_zone $binary_remote_addr zone=login_limit:10m rate=5r/m;
+
 # API calls: max 100 per second per IP
+# Protects API endpoints from abuse
 limit_req_zone $binary_remote_addr zone=api_limit:10m rate=100r/s;
+
 # General request limit: max 20 per second per IP
+# Default rate limit for most content
 limit_req_zone $binary_remote_addr zone=general_limit:10m rate=20r/s;
-# Immich request limit: max 100 per second per IP, for immich
+
+# Immich request limit: max 100 per second per IP
+# Higher limit for Immich due to gallery thumbnail loading
 limit_req_zone $binary_remote_addr zone=immich_limit:10m rate=100r/s;
-# Connection limit: max 10 concurrent connections per IP
+
+# Connection limit: max concurrent connections per IP
+# Applied individually in each server block (10 or 20 depending on service)
 limit_conn_zone $binary_remote_addr zone=conn_limit:10m;
+
+
+# ============================================================================
+# LOGGING
+# ============================================================================
 
 access_log /dev/stdout;
 error_log /dev/stdout;
 
+
 # ============================================================================
-# HTTP to HTTPS Redirect
+# UPSTREAM DEFINITIONS
 # ============================================================================
-server {
-  listen 80 default_server;
-  server_name _;
-  return 301 https://$host$request_uri;
+# Backend service endpoints. Using upstream blocks instead of hardcoded IPs
+# makes configuration more maintainable and enables future load balancing.
+# ============================================================================
+
+upstream immich_backend {
+    server 192.168.178.113:2283;
 }
 
-# ============================================================================
-# DOMAIN1 - Immich (Photo Management)
-# ============================================================================
-server {
-  listen 443 ssl;
-  server_name ${DOMAIN1};
-
-  ssl_certificate     /etc/letsencrypt/live/${DOMAIN1}/fullchain.pem;
-  ssl_certificate_key /etc/letsencrypt/live/${DOMAIN1}/privkey.pem;
-  ssl_protocols TLSv1.2 TLSv1.3;
-  ssl_prefer_server_ciphers on;
-
-  # Security Headers
-  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
-  add_header X-Content-Type-Options "nosniff" always;
-  add_header X-Frame-Options "SAMEORIGIN" always;
-  add_header X-XSS-Protection "1; mode=block" always;
-  add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-  add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
-
-  # Upload limit for photos/videos (5GB max)
-  client_max_body_size 5120M;
-
-  # Timeouts (5 minutes - ML processing can take time)
-  client_body_timeout 300s;
-  client_header_timeout 60s;
-  proxy_read_timeout 300s;
-  proxy_send_timeout 300s;
-  send_timeout 300s;
-
-  # Connection limiting
-  limit_conn conn_limit 20;
-
-  # Proxy headers
-  proxy_set_header Host              $host;
-  proxy_set_header X-Real-IP         $remote_addr;
-  proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-  proxy_set_header X-Forwarded-Proto $scheme;
-
-  # WebSocket support
-  proxy_http_version 1.1;
-  proxy_set_header   Upgrade    $http_upgrade;
-  proxy_set_header   Connection "upgrade";
-  proxy_redirect     off;
-
-  # Nginx status (localhost only)
-  location /nginx_status {
-    stub_status;
-    allow 127.0.0.1;
-    deny all;
-  }
-
-  # API endpoints with rate limiting
-  location ~ ^/api/(auth|user) {
-    limit_req zone=login_limit burst=10 nodelay;
-    limit_req zone=api_limit burst=50 nodelay;
-    proxy_pass http://192.168.178.113:2283;
-  }
-
-  # General API with moderate rate limiting
-  location /api/ {
-    limit_req zone=api_limit burst=50 nodelay;
-    proxy_pass http://192.168.178.113:2283;
-  }
-
-  # Immich discovery endpoint
-  location = /.well-known/immich {
-    limit_req zone=immich_limit burst=20 nodelay;
-    proxy_pass http://192.168.178.113:2283;
-  }
-
-  # Main location with general rate limiting
-  location / {
-    limit_req zone=general_limit burst=200 nodelay;
-    proxy_pass http://192.168.178.113:2283;
-  }
+upstream paperless_backend {
+    server 192.168.178.113:8000;
 }
 
-# ============================================================================
-# DOMAIN2 - Paperless (Document Management)
-# ============================================================================
-server {
-  listen 443 ssl;
-  server_name ${DOMAIN2};
-
-  ssl_certificate     /etc/letsencrypt/live/${DOMAIN1}/fullchain.pem;
-  ssl_certificate_key /etc/letsencrypt/live/${DOMAIN1}/privkey.pem;
-  ssl_protocols TLSv1.2 TLSv1.3;
-  ssl_prefer_server_ciphers on;
-
-  # Security Headers
-  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
-  add_header X-Content-Type-Options "nosniff" always;
-  add_header X-Frame-Options "SAMEORIGIN" always;
-  add_header X-XSS-Protection "1; mode=block" always;
-  add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-  add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
-
-  # Upload limit for documents (100MB max)
-  client_max_body_size 100M;
-
-  # Timeouts (2 minutes - OCR processing)
-  client_body_timeout 120s;
-  client_header_timeout 60s;
-  proxy_read_timeout 120s;
-  proxy_send_timeout 120s;
-  send_timeout 120s;
-
-  # Connection limiting
-  limit_conn conn_limit 10;
-
-  # Proxy headers
-  proxy_http_version 1.1;
-  proxy_set_header Upgrade $http_upgrade;
-  proxy_set_header Connection "upgrade";
-  proxy_redirect off;
-  proxy_set_header Host $host:$server_port;
-  proxy_set_header X-Real-IP $remote_addr;
-  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-  proxy_set_header X-Forwarded-Host $server_name;
-  proxy_set_header X-Forwarded-Proto $scheme;
-
-  # Block admin login endpoint (security measure)
-  location /admin/login {
-    return 302 /;
-  }
-
-  # API endpoints with strict rate limiting
-  location ~ ^/api/(auth|token) {
-    limit_req zone=login_limit burst=10 nodelay;
-    limit_req zone=api_limit burst=50 nodelay;
-    proxy_pass http://192.168.178.113:8000;
-  }
-
-  # Main location with general rate limiting
-  location / {
-    limit_req zone=general_limit burst=20 nodelay;
-    proxy_pass http://192.168.178.113:8000;
-  }
+upstream freshrss_backend {
+    server 192.168.178.113:8080;
 }
 
+
 # ============================================================================
-# DOMAIN3 - FreshRSS (RSS Feed Reader)
+# HTTP TO HTTPS REDIRECT
 # ============================================================================
+# Catch-all server block that redirects all HTTP traffic to HTTPS.
+# ============================================================================
+
 server {
-  server_name ${DOMAIN3};
-  listen 443 ssl;
+    listen 80 default_server;
+    server_name _;
+    return 301 https://$host$request_uri;
+}
 
-  ssl_certificate     /etc/letsencrypt/live/${DOMAIN1}/fullchain.pem;
-  ssl_certificate_key /etc/letsencrypt/live/${DOMAIN1}/privkey.pem;
-  ssl_protocols TLSv1.2 TLSv1.3;
-  ssl_prefer_server_ciphers on;
 
-  # Security Headers
-  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
-  add_header X-Content-Type-Options "nosniff" always;
-  add_header X-Frame-Options "SAMEORIGIN" always;
-  add_header X-XSS-Protection "1; mode=block" always;
-  add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-  add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+# ============================================================================
+# VIRTUAL HOST: DOMAIN1 - Immich (Photo Management)
+# ============================================================================
+# Service: Immich - Self-hosted photo and video management
+# Backend: Port 2283
+# Features:
+# - Machine learning for face recognition and object detection
+# - Mobile app support via /.well-known/immich endpoint
+# - High connection limit (20) for parallel thumbnail loading
+# - Large upload limit (5GB) for 4K video uploads
+# ============================================================================
 
-  # Upload limit (minimal - 10MB)
-  client_max_body_size 10M;
+server {
+    listen 443 ssl;
+    server_name ${DOMAIN1};
 
-  # Timeouts (1 minute - RSS feeds are fast)
-  client_body_timeout 60s;
-  client_header_timeout 60s;
-  proxy_read_timeout 60s;
-  proxy_send_timeout 60s;
-  send_timeout 60s;
+    # ────────────────────────────────────────────────────────────────────────
+    # SSL Certificate Configuration
+    # ────────────────────────────────────────────────────────────────────────
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN1}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN1}/privkey.pem;
 
-  # Connection limiting
-  limit_conn conn_limit 10;
+    # Include SSL/TLS settings
+    include /etc/nginx/includes/ssl-config.conf;
 
-  # Login endpoints with strict rate limiting
-  location ~ ^/(api/greader|login) {
-    limit_req zone=login_limit burst=10 nodelay;
-    limit_req zone=general_limit burst=20 nodelay;
+    # ────────────────────────────────────────────────────────────────────────
+    # Security Headers
+    # ────────────────────────────────────────────────────────────────────────
+    include /etc/nginx/includes/security-headers.conf;
 
-    # Proxy configuration
-    proxy_pass http://192.168.178.113:8080;
-    proxy_redirect off;
-    proxy_buffering off;
-    proxy_set_header Host $host:$server_port;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header X-Forwarded-Port $server_port;
+    # ────────────────────────────────────────────────────────────────────────
+    # Upload & Timeout Limits
+    # ────────────────────────────────────────────────────────────────────────
+    # Upload limit for photos/videos (5GB max for 4K video files)
+    client_max_body_size 5120M;
 
-    # Forward authorization for Google Reader API
-    proxy_set_header Authorization $http_authorization;
-    proxy_pass_header Authorization;
-  }
+    # Timeouts (5 minutes - ML processing can take time)
+    client_body_timeout 300s;
+    client_header_timeout 60s;
+    proxy_read_timeout 300s;
+    proxy_send_timeout 300s;
+    send_timeout 300s;
 
-  # Main location with general rate limiting
-  location / {
-    limit_req zone=general_limit burst=20 nodelay;
+    # ────────────────────────────────────────────────────────────────────────
+    # Connection Limiting
+    # ────────────────────────────────────────────────────────────────────────
+    # Higher limit for Immich (parallel thumbnail requests in gallery view)
+    limit_conn conn_limit 20;
 
-    # The final `/` is important
-    proxy_pass http://192.168.178.113:8080/;
-    proxy_redirect off;
-    proxy_buffering off;
-    proxy_set_header Host $host:$server_port;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_set_header X-Forwarded-Port $server_port;
+    # ────────────────────────────────────────────────────────────────────────
+    # Locations
+    # ────────────────────────────────────────────────────────────────────────
 
-    # Forward authorization for Google Reader API
-    proxy_set_header Authorization $http_authorization;
-    proxy_pass_header Authorization;
-  }
+    # Nginx status endpoint (localhost only, for monitoring)
+    location /nginx_status {
+        stub_status;
+        allow 127.0.0.1;
+        deny all;
+    }
+
+    # API authentication endpoints (strict rate limiting)
+    location ~ ^/api/(auth|user) {
+        limit_req zone=login_limit burst=10 nodelay;
+        limit_req zone=api_limit burst=50 nodelay;
+
+        include /etc/nginx/includes/proxy-headers.conf;
+        proxy_pass http://immich_backend;
+    }
+
+    # General API endpoints (moderate rate limiting)
+    location /api/ {
+        limit_req zone=api_limit burst=50 nodelay;
+
+        include /etc/nginx/includes/proxy-headers.conf;
+        proxy_pass http://immich_backend;
+    }
+
+    # Immich mobile app discovery endpoint
+    location = /.well-known/immich {
+        limit_req zone=immich_limit burst=20 nodelay;
+
+        include /etc/nginx/includes/proxy-headers.conf;
+        proxy_pass http://immich_backend;
+    }
+
+    # Main location (general rate limiting with high burst for gallery view)
+    location / {
+        limit_req zone=general_limit burst=200 nodelay;
+
+        include /etc/nginx/includes/proxy-headers.conf;
+        proxy_pass http://immich_backend;
+    }
+}
+
+
+# ============================================================================
+# VIRTUAL HOST: DOMAIN2 - Paperless (Document Management)
+# ============================================================================
+# Service: Paperless-ngx - Document management system with OCR
+# Backend: Port 8000
+# Features:
+# - Full-text search with PostgreSQL
+# - OCR via Tesseract/Tika
+# - Document archival and tagging
+# - Admin login blocked for security
+# ============================================================================
+
+server {
+    listen 443 ssl;
+    server_name ${DOMAIN2};
+
+    # ────────────────────────────────────────────────────────────────────────
+    # SSL Certificate Configuration
+    # ────────────────────────────────────────────────────────────────────────
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN1}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN1}/privkey.pem;
+
+    # Include SSL/TLS settings
+    include /etc/nginx/includes/ssl-config.conf;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Security Headers
+    # ────────────────────────────────────────────────────────────────────────
+    include /etc/nginx/includes/security-headers.conf;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Upload & Timeout Limits
+    # ────────────────────────────────────────────────────────────────────────
+    # Upload limit for documents (100MB max for scanned PDFs)
+    client_max_body_size 100M;
+
+    # Timeouts (2 minutes - OCR processing)
+    client_body_timeout 120s;
+    client_header_timeout 60s;
+    proxy_read_timeout 120s;
+    proxy_send_timeout 120s;
+    send_timeout 120s;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Connection Limiting
+    # ────────────────────────────────────────────────────────────────────────
+    limit_conn conn_limit 10;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Locations
+    # ────────────────────────────────────────────────────────────────────────
+
+    # Block admin login endpoint (security measure - use direct backend access)
+    location /admin/login {
+        return 302 /;
+    }
+
+    # API authentication endpoints (strict rate limiting)
+    location ~ ^/api/(auth|token) {
+        limit_req zone=login_limit burst=10 nodelay;
+        limit_req zone=api_limit burst=50 nodelay;
+
+        include /etc/nginx/includes/proxy-headers-extended.conf;
+        proxy_pass http://paperless_backend;
+    }
+
+    # Main location (general rate limiting)
+    location / {
+        limit_req zone=general_limit burst=20 nodelay;
+
+        include /etc/nginx/includes/proxy-headers-extended.conf;
+        proxy_pass http://paperless_backend;
+    }
+}
+
+
+# ============================================================================
+# VIRTUAL HOST: DOMAIN3 - FreshRSS (RSS Feed Reader)
+# ============================================================================
+# Service: FreshRSS - Self-hosted RSS feed aggregator
+# Backend: Port 8080
+# Features:
+# - Google Reader API compatibility
+# - Multi-user support
+# - Feed management and organization
+# ============================================================================
+
+server {
+    listen 443 ssl;
+    server_name ${DOMAIN3};
+
+    # ────────────────────────────────────────────────────────────────────────
+    # SSL Certificate Configuration
+    # ────────────────────────────────────────────────────────────────────────
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN1}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN1}/privkey.pem;
+
+    # Include SSL/TLS settings
+    include /etc/nginx/includes/ssl-config.conf;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Security Headers
+    # ────────────────────────────────────────────────────────────────────────
+    include /etc/nginx/includes/security-headers.conf;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Upload & Timeout Limits
+    # ────────────────────────────────────────────────────────────────────────
+    # Upload limit (minimal - 10MB)
+    client_max_body_size 10M;
+
+    # Timeouts (1 minute - RSS feeds are fast)
+    client_body_timeout 60s;
+    client_header_timeout 60s;
+    proxy_read_timeout 60s;
+    proxy_send_timeout 60s;
+    send_timeout 60s;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Connection Limiting
+    # ────────────────────────────────────────────────────────────────────────
+    limit_conn conn_limit 10;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Locations
+    # ────────────────────────────────────────────────────────────────────────
+
+    # Login and Google Reader API endpoints (strict rate limiting)
+    location ~ ^/(api/greader|login) {
+        limit_req zone=login_limit burst=10 nodelay;
+        limit_req zone=general_limit burst=20 nodelay;
+
+        include /etc/nginx/includes/proxy-headers-extended.conf;
+        proxy_pass http://freshrss_backend;
+    }
+
+    # Main location (general rate limiting)
+    location / {
+        limit_req zone=general_limit burst=20 nodelay;
+
+        include /etc/nginx/includes/proxy-headers-extended.conf;
+        # The final `/` is important for proper proxying
+        proxy_pass http://freshrss_backend/;
+    }
 }
