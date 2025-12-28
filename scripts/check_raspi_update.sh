@@ -8,6 +8,8 @@ STATE_TOPIC="rpi/update_status/state"
 DEVICE_ID="rpi_homeassistant_host"
 DEVICE_NAME="RPi Host System"
 
+echo "Script started at $(date --iso-8601=ns)"
+
 # Load MQTT credentials from secure file
 SCRIPT_DIR="$(dirname "$0")"
 CREDENTIALS_FILE="$SCRIPT_DIR/.mqtt_credentials"

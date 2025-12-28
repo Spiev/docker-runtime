@@ -4,6 +4,9 @@ set -e  # Exit bei Fehler
 IMAGE_TAG="nginx:stable"
 COMPOSE_DIR="/home/stefan/docker/proxy"
 
+# For logging details
+echo "Script started at $(date --iso-8601=ns)"
+
 echo "🔍 Prüfe neuestes nginx:stable arm64 Image..."
 
 # Hole neuesten arm64-Digest
