@@ -7,6 +7,8 @@ limit_req_zone $binary_remote_addr zone=login_limit:10m rate=5r/m;
 limit_req_zone $binary_remote_addr zone=api_limit:10m rate=100r/s;
 # General request limit: max 20 per second per IP
 limit_req_zone $binary_remote_addr zone=general_limit:10m rate=20r/s;
+# Immich request limit: max 100 per second per IP, for immich
+limit_req_zone $binary_remote_addr zone=immich_limit:10m rate=100r/s;
 # Connection limit: max 10 concurrent connections per IP
 limit_conn_zone $binary_remote_addr zone=conn_limit:10m;
 
@@ -31,6 +33,8 @@ server {
 
   ssl_certificate     /etc/letsencrypt/live/${DOMAIN1}/fullchain.pem;
   ssl_certificate_key /etc/letsencrypt/live/${DOMAIN1}/privkey.pem;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers on;
 
   # Security Headers
   add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
@@ -51,7 +55,7 @@ server {
   send_timeout 300s;
 
   # Connection limiting
-  limit_conn conn_limit 10;
+  limit_conn conn_limit 20;
 
   # Proxy headers
   proxy_set_header Host              $host;
@@ -87,13 +91,13 @@ server {
 
   # Immich discovery endpoint
   location = /.well-known/immich {
-    limit_req zone=general_limit burst=20 nodelay;
+    limit_req zone=immich_limit burst=20 nodelay;
     proxy_pass http://192.168.178.113:2283;
   }
 
   # Main location with general rate limiting
   location / {
-    limit_req zone=general_limit burst=20 nodelay;
+    limit_req zone=general_limit burst=200 nodelay;
     proxy_pass http://192.168.178.113:2283;
   }
 }
@@ -107,6 +111,8 @@ server {
 
   ssl_certificate     /etc/letsencrypt/live/${DOMAIN1}/fullchain.pem;
   ssl_certificate_key /etc/letsencrypt/live/${DOMAIN1}/privkey.pem;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers on;
 
   # Security Headers
   add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
@@ -168,6 +174,8 @@ server {
 
   ssl_certificate     /etc/letsencrypt/live/${DOMAIN1}/fullchain.pem;
   ssl_certificate_key /etc/letsencrypt/live/${DOMAIN1}/privkey.pem;
+  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_prefer_server_ciphers on;
 
   # Security Headers
   add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
