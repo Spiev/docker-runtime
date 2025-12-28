@@ -19,7 +19,7 @@ fi
 echo "📦 Neuester Digest: $LATEST_DIGEST"
 
 # Prüfe ob schon aktuell
-CURRENT_DIGEST=$(docker image inspect $IMAGE_TAG --format='{{index .RepoDigests 0}}' 2>/dev/null | cut -d'@' -f2)
+CURRENT_DIGEST=$(docker image inspect $IMAGE_TAG --format='{{index .RepoDigests 1}}' 2>/dev/null | cut -d'@' -f2)
 
 if [ "$CURRENT_DIGEST" = "$LATEST_DIGEST" ]; then
   echo "✅ Image ist bereits aktuell!"
