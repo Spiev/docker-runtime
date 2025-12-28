@@ -8,10 +8,12 @@ CLAUDE.md
 .mqtt_credentials
 .restic.env
 
-# Production scripts (contain environment-specific paths)
-# Only .example files are tracked
+# Production scripts (contain environment-specific paths and container names)
+# Only .example files are tracked - copy .example to production and adjust for your setup
 scripts/backup-to-hdd.sh
 scripts/nginx_update.sh
+scripts/nginx_check.sh
+scripts/check_raspi_update.sh
 fail2ban/test-fail2ban.sh
 
 # Dashboard config (contains internal IPs and entity IDs)
