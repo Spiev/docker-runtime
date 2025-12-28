@@ -1,10 +1,17 @@
 /bin
+
+# Claude Historie excluden, weil sensible Informationen enthalten sein können
+CLAUDE.md
+
+# Credential Files
 .env
 .mqtt_credentials
-CLAUDE.md
+.restic.env
+
+# Allgemeine Config und Bewegungsdaten, die anders gesichert werden
 freshrss/config/
-homeassistant/home-assistant-matter-hub/
 homeassistant/homeassistant/
+homeassistant/home-assistant-matter-hub/
 homeassistant/mosquitto/
 homeassistant/musicassistant/
 immich/library/
@@ -13,5 +20,7 @@ paperless/library/
 paperless/redisdata/
 paperless/postgres/
 pihole/etc-pihole/
-proxy/nginx/static/
+
+# Exclude logfiles
 logs
+
