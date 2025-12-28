@@ -81,7 +81,7 @@ fi
 send_discovery() {
     local discovery_payload=$(cat <<EOF
 {
-  "name": "Restic Backup Status",
+  "name": "Status",
   "unique_id": "restic_backup_status",
   "state_topic": "$STATE_TOPIC",
   "json_attributes_topic": "$ATTRIBUTES_TOPIC",
