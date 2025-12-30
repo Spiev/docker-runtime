@@ -25,7 +25,7 @@ echo "Nginx update script started at $(date --iso-8601=ns)"
 # ============================================================================
 
 SCRIPT_DIR="$(dirname "$0")"
-IMAGE_TAG="nginx:stable"
+IMAGE_TAG="nginx:stable-alpine"
 
 # Path to your docker-compose directory for the nginx proxy
 # Adjust this to match your setup (e.g., /home/user/docker/proxy)
@@ -160,7 +160,7 @@ send_discovery
 # Send initial state
 send_state "running"
 
-echo "🔍 Checking for latest nginx:stable arm64 image..."
+echo "🔍 Checking for latest $IMAGE_TAG arm64 image..."
 
 # Get latest arm64 digest from Docker Hub
 LATEST_DIGEST=$(docker manifest inspect $IMAGE_TAG 2>/dev/null | \
