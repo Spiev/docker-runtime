@@ -175,15 +175,21 @@ fi
 echo "📦 Latest digest: $LATEST_DIGEST"
 
 # Check current digest
-CURRENT_DIGEST=$(docker image inspect $IMAGE_TAG --format='{{index .RepoDigests 1}}' 2>/dev/null | cut -d'@' -f2)
+# Multi-platform images have multiple RepoDigests (manifest list + platform-specific)
+# We need to check both against the remote digest
+CURRENT_DIGEST_1=$(docker image inspect $IMAGE_TAG --format='{{index .RepoDigests 0}}' 2>/dev/null | cut -d'@' -f2)
+CURRENT_DIGEST_2=$(docker image inspect $IMAGE_TAG --format='{{index .RepoDigests 1}}' 2>/dev/null | cut -d'@' -f2)
+
+# For output: Use the first non-empty digest
+CURRENT_DIGEST="${CURRENT_DIGEST_1:-$CURRENT_DIGEST_2}"
 
 # Get current version before potential update
 # Note: Adjust container name if different (e.g., nginx-nginx-1, proxy_nginx_1)
 CONTAINER_NAME=$(docker compose -f "$COMPOSE_DIR/docker-compose.yml" ps nginx --format json 2>/dev/null | jq -r '.[0].Name' 2>/dev/null || echo "proxy-nginx-1")
 OLD_VERSION=$(docker exec $CONTAINER_NAME nginx -v 2>&1 | awk -F'/' '{print $2}' || echo "unknown")
 
-# Check if already up to date
-if [ "$CURRENT_DIGEST" = "$LATEST_DIGEST" ]; then
+# Check if already up to date (check both digests for multi-platform images)
+if [ "$CURRENT_DIGEST_1" = "$LATEST_DIGEST" ] || [ "$CURRENT_DIGEST_2" = "$LATEST_DIGEST" ]; then
   echo "✅ Image is already up to date!"
 
   # Calculate duration
