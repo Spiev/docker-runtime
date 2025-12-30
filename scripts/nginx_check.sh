@@ -21,7 +21,11 @@ fi
 PLATFORM=$(docker version --format '{{.Server.Arch}}')
 
 # Digests
-LOCAL_DIGEST=$(docker image inspect $IMAGE_TAG --format='{{index .RepoDigests 0}}' 2>/dev/null | cut -d'@' -f2)
+# Multi-platform images have multiple RepoDigests (manifest list + platform-specific)
+# We need to check both against the remote digest
+LOCAL_DIGEST_1=$(docker image inspect $IMAGE_TAG --format='{{index .RepoDigests 0}}' 2>/dev/null | cut -d'@' -f2)
+LOCAL_DIGEST_2=$(docker image inspect $IMAGE_TAG --format='{{index .RepoDigests 1}}' 2>/dev/null | cut -d'@' -f2)
+
 REMOTE_DIGEST=$(docker manifest inspect $IMAGE_TAG 2>/dev/null | \
   jq -r '.manifests[] | select((.platform.architecture == "arm64" or .platform.architecture == "aarch64") and .platform.os == "linux") | .digest' | \
   head -n1)
@@ -54,11 +58,15 @@ REMOTE_CREATED_HUMAN=$(date -d "$REMOTE_CREATED" "+%Y-%m-%d %H:%M" 2>/dev/null |
 
 
 # Status
-if [ "$LOCAL_DIGEST" = "$REMOTE_DIGEST" ] && [ -n "$LOCAL_DIGEST" ]; then
+# Check both local digests against remote (one of them should match for multi-platform images)
+if ([ "$LOCAL_DIGEST_1" = "$REMOTE_DIGEST" ] || [ "$LOCAL_DIGEST_2" = "$REMOTE_DIGEST" ]) && [ -n "$REMOTE_DIGEST" ]; then
   STATUS="Aktuell"
 else
   STATUS="Update verfügbar"
 fi
+
+# For output: Use the first non-empty digest
+LOCAL_DIGEST="${LOCAL_DIGEST_1:-$LOCAL_DIGEST_2}"
 
 # Wie alt ist das lokale Image (in Tagen)
 if [ "$LOCAL_CREATED_TS" != "0" ]; then
