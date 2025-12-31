@@ -245,14 +245,18 @@ send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Ba
 
 # Backup Home Assistant configuration directory
 # Includes: configuration.yaml, automations.yaml, scripts.yaml, secrets.yaml,
-#           custom_components/, .storage/ (dashboards, integrations), backup/
+#           custom_components/, backup/ (HA's own full backups)
+# Excludes: .storage/ (included in HA backups), .cloud/ (Nabu Casa, not needed)
 # Note: Using --ignore-inode to handle locked files (e.g., database, logs)
 #       Exit code 3 (incomplete) is downgraded to success if most files backed up
 HOMEASSISTANT_OUTPUT=$(restic -r "$RESTIC_REPO" backup "$DOCKER_BASE/homeassistant/homeassistant/config" \
   --ignore-inode \
   --exclude="*.log" \
+  --exclude="*.db" \
   --exclude="*.db-shm" \
   --exclude="*.db-wal" \
+  --exclude=".storage" \
+  --exclude=".cloud" \
   --verbose 2>&1) || HOMEASSISTANT_EXIT_CODE=$?
 
 # Restic exit code 3 = incomplete backup (some files couldn't be read)
