@@ -246,7 +246,7 @@ send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Ba
 # Backup Home Assistant configuration directory
 # Includes: configuration.yaml, automations.yaml, scripts.yaml, secrets.yaml,
 #           custom_components/, .storage/ (dashboards, integrations)
-HOMEASSISTANT_OUTPUT=$(restic -r "$RESTIC_REPO" backup "$DOCKER_BASE/homeassistant/config" --verbose 2>&1)
+HOMEASSISTANT_OUTPUT=$(restic -r "$RESTIC_REPO" backup "$DOCKER_BASE/homeassistant/homeassistant/config" --verbose 2>&1)
 echo "$HOMEASSISTANT_OUTPUT"
 HOMEASSISTANT_STATS=$(parse_restic_stats "$HOMEASSISTANT_OUTPUT")
 
