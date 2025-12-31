@@ -77,7 +77,6 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
    # Production scripts (adjust paths for your setup)
    cp backup-to-hdd.sh.example backup-to-hdd.sh
    cp nginx_update.sh.example nginx_update.sh
-   cp nginx_check.sh.example nginx_check.sh
    cp check_raspi_update.sh.example check_raspi_update.sh
 
    # Make scripts executable
@@ -123,7 +122,7 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 
 ### Fail2ban Protection
 - Custom filters for Nginx auth failures, rate limiting, and scanning
-- Per-service jails (Immich, Paperless, FreshRSS)
+- Per-service jails (Immich, Paperless, FreshRSS, Home Assistant)
 - Recidive jail for repeat offenders
 - DOCKER-USER iptables chain integration
 
@@ -227,7 +226,6 @@ sudo fail2ban-client banned
 
 2. **Script Paths:**
    - `scripts/nginx_update.sh`: Set `COMPOSE_DIR` to your proxy path
-   - `scripts/nginx_check.sh`: Set `CONTAINER_NAME` to match your setup
    - `scripts/backup-to-hdd.sh`: Set `DOCKER_BASE` to your Docker directory
 
 3. **Hardware Dependencies:**
