@@ -69,6 +69,10 @@ upstream freshrss_backend {
     server 192.168.178.113:8080;
 }
 
+upstream homeassistant_backend {
+    server 192.168.178.113:8123;
+}
+
 
 # ============================================================================
 # HTTP TO HTTPS REDIRECT
@@ -321,5 +325,97 @@ server {
         include /etc/nginx/includes/proxy-headers.conf;
         # The final `/` is important for proper proxying
         proxy_pass http://freshrss_backend/;
+    }
+}
+
+
+# ============================================================================
+# VIRTUAL HOST: DOMAIN4 - Home Assistant (Home Automation Hub)
+# ============================================================================
+# Service: Home Assistant - Open-source home automation platform
+# Backend: Port 8123
+# Features:
+# - WebSocket support for real-time updates
+# - Mobile app compatibility (iOS/Android Companion Apps)
+# - Integration with 1000+ smart home devices
+# - Automation engine and dashboard
+# Security:
+# - Home Assistant's built-in authentication with 2FA support
+# - Fail2ban protection against brute-force attacks
+# - Rate limiting on auth endpoints
+# ============================================================================
+
+server {
+    listen 443 ssl;
+    server_name ${DOMAIN4};
+
+    # ────────────────────────────────────────────────────────────────────────
+    # SSL Certificate Configuration
+    # ────────────────────────────────────────────────────────────────────────
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN1}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN1}/privkey.pem;
+
+    # Include SSL/TLS settings
+    include /etc/nginx/includes/ssl-config.conf;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Security Headers
+    # ────────────────────────────────────────────────────────────────────────
+    include /etc/nginx/includes/security-headers.conf;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Upload & Timeout Limits
+    # ────────────────────────────────────────────────────────────────────────
+    # Upload limit (10MB - config files, backups, camera snapshots)
+    client_max_body_size 10M;
+
+    # Timeouts (2 minutes - some integrations can be slow)
+    client_body_timeout 120s;
+    client_header_timeout 60s;
+    proxy_read_timeout 120s;
+    proxy_send_timeout 120s;
+    send_timeout 120s;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Connection Limiting
+    # ────────────────────────────────────────────────────────────────────────
+    # Higher limit for HA (multiple dashboards, automations, sensors)
+    limit_conn conn_limit 15;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Locations
+    # ────────────────────────────────────────────────────────────────────────
+
+    # Authentication endpoints (strict rate limiting)
+    location ~ ^/auth/(login|token) {
+        limit_req zone=login_limit burst=10 nodelay;
+        limit_req zone=api_limit burst=50 nodelay;
+
+        include /etc/nginx/includes/proxy-headers.conf;
+        proxy_pass http://homeassistant_backend;
+    }
+
+    # API endpoints (moderate rate limiting)
+    location /api/ {
+        limit_req zone=api_limit burst=100 nodelay;
+
+        include /etc/nginx/includes/proxy-headers.conf;
+        proxy_pass http://homeassistant_backend;
+    }
+
+    # WebSocket endpoint (critical for real-time updates)
+    location /api/websocket {
+        limit_req zone=api_limit burst=50 nodelay;
+
+        include /etc/nginx/includes/proxy-headers.conf;
+        proxy_pass http://homeassistant_backend;
+    }
+
+    # Main location (general rate limiting)
+    location / {
+        limit_req zone=general_limit burst=50 nodelay;
+
+        include /etc/nginx/includes/proxy-headers.conf;
+        proxy_pass http://homeassistant_backend;
     }
 }
