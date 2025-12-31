@@ -3,10 +3,10 @@ services:
   certbot-init:
     image: certbot/certbot
     entrypoint: /bin/sh
-    command: -c 'test -d /etc/letsencrypt/live/${DOMAIN1} || certbot certonly -v --standalone -v -d $DOMAIN1 -d $DOMAIN2 -d $DOMAIN3 -m $EMAIL --force-renewal --agree-tos'
+    command: -c 'test -d /etc/letsencrypt/live/${DOMAIN1} || certbot certonly -v --standalone -v -d $DOMAIN1 -d $DOMAIN2 -d $DOMAIN3 -d $DOMAIN4 -m $EMAIL --force-renewal --agree-tos'
       # Initial recreation when new host is added
-      # command: -c 'certbot certonly -v --standalone -v -d $DOMAIN1 -d $DOMAIN2 -d $DOMAIN3 -m $EMAIL --force-renewal --agree-tos'
-    ports: 
+      # command: -c 'certbot certonly -v --standalone -v -d $DOMAIN1 -d $DOMAIN2 -d $DOMAIN3 -d $DOMAIN4 -m $EMAIL --force-renewal --agree-tos'
+    ports:
       - 80:80
     volumes:
       - cert_volume:/etc/letsencrypt
@@ -28,6 +28,7 @@ services:
       DOMAIN1: ${DOMAIN1}
       DOMAIN2: ${DOMAIN2}
       DOMAIN3: ${DOMAIN3}
+      DOMAIN4: ${DOMAIN4}
     depends_on:
       certbot-init:
         condition: service_completed_successfully
