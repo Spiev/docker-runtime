@@ -5,12 +5,13 @@
 # - DOMAIN1: Immich (Photo Management)
 # - DOMAIN2: Paperless (Document Management)
 # - DOMAIN3: FreshRSS (RSS Feed Reader)
+# - DOMAIN4: HomeAssistant (SmartHome System)
 #
 # Environment variables (set in docker-compose.yml from .env):
 # - ${DOMAIN1}, ${DOMAIN2}, ${DOMAIN3}: Domain names for each service
 #
 # Maintainer: Stefan
-# Last updated: 2025-12-28
+# Last updated: 2025-12-31
 # ============================================================================
 
 
