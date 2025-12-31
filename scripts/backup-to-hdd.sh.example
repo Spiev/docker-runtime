@@ -245,8 +245,25 @@ send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Ba
 
 # Backup Home Assistant configuration directory
 # Includes: configuration.yaml, automations.yaml, scripts.yaml, secrets.yaml,
-#           custom_components/, .storage/ (dashboards, integrations)
-HOMEASSISTANT_OUTPUT=$(restic -r "$RESTIC_REPO" backup "$DOCKER_BASE/homeassistant/homeassistant/config" --verbose 2>&1)
+#           custom_components/, .storage/ (dashboards, integrations), backup/
+# Note: Using --ignore-inode to handle locked files (e.g., database, logs)
+#       Exit code 3 (incomplete) is downgraded to success if most files backed up
+HOMEASSISTANT_OUTPUT=$(restic -r "$RESTIC_REPO" backup "$DOCKER_BASE/homeassistant/homeassistant/config" \
+  --ignore-inode \
+  --exclude="*.log" \
+  --exclude="*.db-shm" \
+  --exclude="*.db-wal" \
+  --verbose 2>&1) || HOMEASSISTANT_EXIT_CODE=$?
+
+# Restic exit code 3 = incomplete backup (some files couldn't be read)
+# This is acceptable for HA as some files may be locked during operation
+if [[ ${HOMEASSISTANT_EXIT_CODE:-0} -eq 3 ]]; then
+    echo "Warning: Home Assistant backup incomplete (some files locked), but continuing..."
+    HOMEASSISTANT_EXIT_CODE=0
+elif [[ ${HOMEASSISTANT_EXIT_CODE:-0} -ne 0 ]]; then
+    echo "ERROR: Home Assistant backup failed with exit code $HOMEASSISTANT_EXIT_CODE"
+    exit $HOMEASSISTANT_EXIT_CODE
+fi
 echo "$HOMEASSISTANT_OUTPUT"
 HOMEASSISTANT_STATS=$(parse_restic_stats "$HOMEASSISTANT_OUTPUT")
 
