@@ -168,7 +168,8 @@ automation:
 ### Restic Backups
 - **Immich**: Backs up photo library including auto-exported database dumps
 - **Paperless**: Exports PostgreSQL database, then backs up all documents
-- **Home Assistant**: Backs up configuration, automations, dashboards, and custom components
+- **Home Assistant**: Backs up configuration files (yaml configs, custom_components) and HA's own backup archives
+  - Excludes .storage/ and .cloud/ to avoid permission issues (included in HA backups)
 - **Storage**: External HDD with encrypted Restic repository
 - **Automation**: Cron-scheduled with MQTT status reporting
 
