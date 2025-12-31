@@ -182,6 +182,109 @@ crontab -e
 0 2 * * * /path/to/scripts/backup-to-hdd.sh >> /path/to/logs/backup.log 2>&1
 ```
 
+### Restore from Backup
+
+**Prerequisites:**
+```bash
+# Mount backup drive
+sudo mount /dev/sda1 /mnt/sda1 -o rw,uid=$UID,user,dmask=007,fmask=117
+
+# Load Restic password
+cd ~/docker/scripts
+source .restic.env
+```
+
+**List available snapshots:**
+```bash
+restic -r /mnt/sda1/restic-repo snapshots
+```
+
+**Restore Home Assistant:**
+```bash
+# Stop Home Assistant
+cd ~/docker/homeassistant
+docker compose down
+
+# Restore from latest snapshot
+restic -r /mnt/sda1/restic-repo restore latest \
+  --target /tmp/restore \
+  --include '**/homeassistant/homeassistant/config'
+
+# Copy restored files
+cp -r /tmp/restore/home/stefan/docker/homeassistant/homeassistant/config/* \
+  ~/docker/homeassistant/homeassistant/config/
+
+# For full HA restore: Extract latest backup archive
+cd ~/docker/homeassistant/homeassistant/config/backup
+tar -xzf <latest-backup>.tar.gz
+# Then restore via HA UI: Settings → System → Backups → Upload
+
+# Start Home Assistant
+docker compose up -d
+
+# Cleanup
+rm -rf /tmp/restore
+```
+
+**Restore Immich:**
+```bash
+# Stop Immich
+cd ~/docker/immich
+docker compose down
+
+# Restore from specific snapshot (e.g., snapshot abc123)
+restic -r /mnt/sda1/restic-repo restore abc123 \
+  --target /tmp/restore \
+  --include '**/immich/library'
+
+# Copy restored files
+cp -r /tmp/restore/home/stefan/docker/immich/library/* \
+  ~/docker/immich/library/
+
+# Start Immich
+docker compose up -d
+
+# Cleanup
+rm -rf /tmp/restore
+```
+
+**Restore Paperless:**
+```bash
+# Stop Paperless
+cd ~/docker/paperless
+docker compose down
+
+# Restore from latest snapshot
+restic -r /mnt/sda1/restic-repo restore latest \
+  --target /tmp/restore \
+  --include '**/paperless/library'
+
+# Copy restored files
+cp -r /tmp/restore/home/stefan/docker/paperless/library/* \
+  ~/docker/paperless/library/
+
+# Restore database from backup
+cd ~/docker/paperless/library/backup
+gunzip < paperless_*.sql.gz | docker exec -i paperless-db-1 psql -U paperless
+
+# Start Paperless
+docker compose up -d
+
+# Cleanup
+rm -rf /tmp/restore
+```
+
+**Unmount backup drive:**
+```bash
+sudo umount /mnt/sda1
+```
+
+**Important Notes:**
+- Always test restores regularly to ensure backups are working
+- For Home Assistant: Use HA's backup archives in `backup/` directory for full restore
+- Adjust paths (`/home/stefan/docker`) to match your `$DOCKER_BASE`
+- Consider restoring to a test directory first to verify data integrity
+
 ## 🔧 Common Operations
 
 ### SSL Certificate Management
