@@ -9,7 +9,7 @@
 # Deployment-Anleitung:
 # 1. SSH in Ihren Raspberry Pi
 # 2. Öffnen Sie die configuration.yaml:
-#    nano ~/docker/homeassistant/config/configuration.yaml
+#    nano ~/docker/homeassistant/homeassistant/config/configuration.yaml
 # 3. Fügen Sie die http-Konfiguration unten ein
 # 4. Home Assistant neu starten:
 #    cd ~/docker/homeassistant && docker compose restart homeassistant
