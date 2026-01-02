@@ -8,6 +8,9 @@ CLAUDE.md
 .mqtt_credentials
 .restic.env
 
+# Claude Code local settings
+.claude/
+
 # Production scripts (contain environment-specific paths and container names)
 # Only .example files are tracked - copy .example to production and adjust for your setup
 scripts/backup-to-hdd.sh
