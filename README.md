@@ -123,6 +123,7 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 ### Fail2ban Protection
 - Custom filters for Nginx auth failures, rate limiting, and scanning
 - Per-service jails (Immich, Paperless, FreshRSS, Home Assistant)
+- **Home Assistant special handling**: Monitors HA's internal log (HA returns HTTP 200 for failed logins)
 - Recidive jail for repeat offenders
 - DOCKER-USER iptables chain integration
 
