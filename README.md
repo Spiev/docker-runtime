@@ -63,7 +63,20 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
    # Repeat for other services: proxy, paperless, etc.
    ```
 
-3. **Setup monitoring scripts:**
+3. **Configure Home Assistant:**
+   ```bash
+   cd homeassistant/homeassistant/config
+
+   # Copy all config templates
+   cp configuration.yaml.example configuration.yaml
+   cp mqtt.yaml.example mqtt.yaml
+   cp templates.yaml.example templates.yaml
+   cp command_line.yaml.example command_line.yaml
+
+   # Edit each .yaml file: replace placeholders (YOUR_HA_DOMAIN, SENSOR_EUI, etc.)
+   ```
+
+4. **Setup monitoring scripts:**
    ```bash
    cd scripts
 
@@ -86,7 +99,7 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
    chmod +x *.sh
    ```
 
-4. **Start services:**
+5. **Start services:**
    ```bash
    # Start individual services
    cd proxy
@@ -100,7 +113,7 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 ```
 ├── proxy/              # Nginx reverse proxy + Let's Encrypt
 ├── pihole/             # DNS-based ad blocker
-├── homeassistant/      # Home automation stack
+├── homeassistant/      # Home automation stack (config templates: *.yaml.example)
 ├── immich/             # Photo management
 ├── paperless/          # Document management
 ├── freshrss/           # RSS feed reader
@@ -133,7 +146,8 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 
 ### Credential Management
 - All credentials in `.env` files (excluded from git)
-- Template files (`.env.example`) for easy setup
+- Template files (`.env.example`, `.yaml.example`) for easy setup
+- Home Assistant configs use `.yaml.example` suffix to indicate placeholders need customization
 - File permissions enforced (600 for credential files)
 - No hardcoded secrets in scripts
 
