@@ -1,0 +1,97 @@
+# =============================================================================
+# Home Assistant Configuration (Hauptdatei)
+# =============================================================================
+# Diese Datei ist die zentrale Konfigurationsdatei für Home Assistant.
+# Komplexere Blöcke sind in separate Dateien ausgelagert.
+#
+# Deployment:
+#   cp configuration-example.yaml ~/docker/homeassistant/homeassistant/config/configuration.yaml
+#   # Passe Domains und IPs an deine Umgebung an
+# =============================================================================
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+# =============================================================================
+# Include externe Dateien
+# =============================================================================
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+# Ausgelagerte Konfigurationen
+mqtt: !include mqtt.yaml
+template: !include templates.yaml
+command_line: !include command_line.yaml
+
+# =============================================================================
+# Entity Customization
+# =============================================================================
+homeassistant:
+  customize:
+    # Dragino LoRaWAN Sensoren (TTN/TTS)
+    # Passe die Entity-IDs an deine Geräte an
+    sensor.eui_SENSOR1_tempc_sht:
+      device_class: "temperature"
+      state_class: "measurement"
+      unit_of_measurement: "°C"
+    sensor.eui_SENSOR1_hum_sht:
+      unit_of_measurement: "%"
+      device_class: "moisture"
+      state_class: "measurement"
+    sensor.eui_SENSOR2_tempc_sht:
+      device_class: "temperature"
+      state_class: "measurement"
+      unit_of_measurement: "°C"
+    sensor.eui_SENSOR2_hum_sht:
+      unit_of_measurement: "%"
+      device_class: "moisture"
+      state_class: "measurement"
+
+# =============================================================================
+# Utility Meter (für monatliche Statistiken)
+# =============================================================================
+utility_meter:
+  tesla_energy_monthly:
+    source: sensor.tesla_charge_energy_added
+    cycle: monthly
+    name: "Tesla Energy Monthly"
+
+# =============================================================================
+# Zigbee Home Automation (ZHA)
+# =============================================================================
+zha:
+  zigpy_config:
+    ota:
+      ikea_provider: true
+      ledvance_provider: true
+      salus_provider: true
+      inovelli_provider: true
+      thirdreality_provider: true
+
+# =============================================================================
+# HTTP / Reverse Proxy Konfiguration
+# =============================================================================
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 172.16.0.0/12        # Docker bridge network
+    - 192.168.178.0/24     # Local network (adjust if different)
+    - 127.0.0.1            # Localhost
+  cors_allowed_origins:
+    - https://YOUR_HA_DOMAIN  # Ersetze mit deiner Domain
+  ip_ban_enabled: true
+  login_attempts_threshold: 5
+
+# =============================================================================
+# Logging
+# =============================================================================
+logger:
+  default: info
+  logs:
+    homeassistant.components.http: debug
+    homeassistant.components.http.ban: warning

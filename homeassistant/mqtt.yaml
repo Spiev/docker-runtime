@@ -1,0 +1,124 @@
+# =============================================================================
+# MQTT Sensoren für Home Assistant
+# =============================================================================
+# Diese Datei enthält alle MQTT-basierten Sensoren.
+# Wird in configuration.yaml eingebunden via: mqtt: !include mqtt.yaml
+#
+# Hinweis: Sensoren die MQTT Discovery nutzen (backup, nginx_update, rpi_update)
+# werden automatisch erstellt und müssen hier NICHT definiert werden.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Raspberry Pi Host Monitoring (Legacy - falls MQTT Discovery nicht genutzt)
+# -----------------------------------------------------------------------------
+# HINWEIS: Diese Sensoren werden jetzt automatisch via MQTT Discovery erstellt
+# durch das check_raspi_update.sh Script. Die folgenden Einträge sind nur als
+# Backup falls Discovery nicht funktioniert.
+
+# - sensor:
+#     name: "RPi Verfügbare Updates"
+#     state_topic: "rpi/update_status/state"
+#     value_template: "{{ value_json.system_updates }}"
+#     unit_of_measurement: "Updates"
+#     icon: mdi:package-up
+#
+# - sensor:
+#     name: "RPi EEPROM Status"
+#     state_topic: "rpi/update_status/state"
+#     value_template: "{{ value_json.eeprom_status }}"
+#     icon: mdi:chip
+
+# -----------------------------------------------------------------------------
+# Teslamate Sensoren
+# -----------------------------------------------------------------------------
+sensor:
+  # Battery and Range
+  - name: "Tesla Battery Level"
+    state_topic: "teslamate/cars/1/battery_level"
+    unit_of_measurement: "%"
+    icon: mdi:battery
+    device_class: battery
+    state_class: measurement
+
+  - name: "Tesla Rated Range"
+    state_topic: "teslamate/cars/1/rated_battery_range_km"
+    unit_of_measurement: "km"
+    icon: mdi:map-marker-distance
+
+  - name: "Tesla Est Range"
+    state_topic: "teslamate/cars/1/est_battery_range_km"
+    unit_of_measurement: "km"
+    icon: mdi:map-marker-distance
+
+  # Charging Information
+  - name: "Tesla Plugged In"
+    state_topic: "teslamate/cars/1/plugged_in"
+    icon: mdi:ev-plug-type2
+
+  - name: "Tesla Charging State"
+    state_topic: "teslamate/cars/1/state"
+    icon: mdi:car-electric
+
+  - name: "Tesla Charge Energy Added"
+    state_topic: "teslamate/cars/1/charge_energy_added"
+    unit_of_measurement: "kWh"
+    icon: mdi:lightning-bolt
+    device_class: energy
+    state_class: total_increasing
+
+  - name: "Tesla Charger Power"
+    state_topic: "teslamate/cars/1/charger_power"
+    unit_of_measurement: "kW"
+    icon: mdi:flash
+    device_class: power
+
+  # Location
+  - name: "Tesla Latitude"
+    state_topic: "teslamate/cars/1/latitude"
+    icon: mdi:crosshairs-gps
+
+  - name: "Tesla Longitude"
+    state_topic: "teslamate/cars/1/longitude"
+    icon: mdi:crosshairs-gps
+
+  # Odometer
+  - name: "Tesla Odometer"
+    state_topic: "teslamate/cars/1/odometer"
+    unit_of_measurement: "km"
+    icon: mdi:counter
+
+  # Software Version
+  - name: "Tesla Software Version"
+    state_topic: "teslamate/cars/1/version"
+    icon: mdi:tag
+
+  # Temperature
+  - name: "Tesla Inside Temp"
+    state_topic: "teslamate/cars/1/inside_temp"
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer
+    device_class: temperature
+
+  - name: "Tesla Outside Temp"
+    state_topic: "teslamate/cars/1/outside_temp"
+    unit_of_measurement: "°C"
+    icon: mdi:thermometer
+    device_class: temperature
+
+# -----------------------------------------------------------------------------
+# Zusätzliche Teslamate Sensoren (optional)
+# -----------------------------------------------------------------------------
+# Weitere verfügbare Topics: https://docs.teslamate.org/docs/integrations/home-assistant
+#
+#   - name: "Tesla Speed"
+#     state_topic: "teslamate/cars/1/speed"
+#     unit_of_measurement: "km/h"
+#     icon: mdi:speedometer
+#
+#   - name: "Tesla Shift State"
+#     state_topic: "teslamate/cars/1/shift_state"
+#     icon: mdi:car-shift-pattern
+#
+#   - name: "Tesla Locked"
+#     state_topic: "teslamate/cars/1/locked"
+#     icon: mdi:lock
