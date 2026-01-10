@@ -28,6 +28,9 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 - **Paperless-ngx** - Document management with OCR
 - **FreshRSS** - RSS feed reader
 
+### Vehicle & IoT
+- **Teslamate** - Tesla vehicle data logging with Grafana dashboards and Home Assistant integration
+
 ### Monitoring & Automation
 - **Backup Scripts** - Automated Restic backups with MQTT status reporting
 - **Update Monitors** - Track Docker image and system updates via MQTT
@@ -101,6 +104,7 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 ├── immich/             # Photo management
 ├── paperless/          # Document management
 ├── freshrss/           # RSS feed reader
+├── teslamate/          # Tesla vehicle data logging + Grafana
 ├── fail2ban/           # Intrusion prevention configs
 └── scripts/            # Monitoring and backup automation
     ├── *.example       # Template scripts (tracked in git)
@@ -362,6 +366,7 @@ This project is provided as-is for educational and personal use. Adapt as needed
 - [Home Assistant](https://www.home-assistant.io/)
 - [Immich](https://immich.app/)
 - [Paperless-ngx](https://docs.paperless-ngx.com/)
+- [Teslamate](https://docs.teslamate.org/)
 - [Restic Backup](https://restic.net/)
 
 ---
