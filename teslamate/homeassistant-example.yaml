@@ -25,6 +25,7 @@ mqtt:
       unit_of_measurement: "%"
       icon: mdi:battery
       device_class: battery
+      state_class: measurement
 
     - name: "Tesla Rated Range"
       state_topic: "teslamate/cars/1/rated_battery_range_km"
