@@ -28,10 +28,10 @@ homeassistant/homeassistant/*
 !homeassistant/homeassistant/config/
 homeassistant/homeassistant/config/*
 # Only allow specific config templates (no secrets, automations, etc.)
-!homeassistant/homeassistant/config/configuration-example.yaml
-!homeassistant/homeassistant/config/mqtt-example.yaml
-!homeassistant/homeassistant/config/templates-example.yaml
-!homeassistant/homeassistant/config/command_line-example.yaml
+!homeassistant/homeassistant/config/configuration.yaml.example
+!homeassistant/homeassistant/config/mqtt.yaml.example
+!homeassistant/homeassistant/config/templates.yaml.example
+!homeassistant/homeassistant/config/command_line.yaml.example
 homeassistant/home-assistant-matter-hub/
 homeassistant/mosquitto/
 homeassistant/musicassistant/
