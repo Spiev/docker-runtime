@@ -37,6 +37,7 @@ pihole/etc-pihole/
 teslamate/postgres/
 teslamate/grafana/
 teslamate/import/
+teslamate/backup/
 
 # Exclude logfiles
 logs
