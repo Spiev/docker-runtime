@@ -11,7 +11,7 @@ services:
       - DATABASE_PASS=${TM_DB_PASS}
       - DATABASE_NAME=${TM_DB_NAME}
       - DATABASE_HOST=teslamate-db
-      - MQTT_HOST=${MQTT_HOST:-192.168.178.113}
+      - MQTT_HOST=${MQTT_HOST}
       - MQTT_USERNAME=${MQTT_USERNAME}
       - MQTT_PASSWORD=${MQTT_PASSWORD}
       - TZ=${TZ:-Europe/Berlin}
