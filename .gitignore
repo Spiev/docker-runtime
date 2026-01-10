@@ -24,7 +24,10 @@ dashboard-config.yaml
 
 # Allgemeine Config und Bewegungsdaten, die anders gesichert werden
 freshrss/config/
-homeassistant/homeassistant/
+homeassistant/homeassistant/*
+!homeassistant/homeassistant/config/
+homeassistant/homeassistant/config/*
+!homeassistant/homeassistant/config/*.yaml
 homeassistant/home-assistant-matter-hub/
 homeassistant/mosquitto/
 homeassistant/musicassistant/
