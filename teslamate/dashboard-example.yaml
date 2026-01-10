@@ -83,13 +83,10 @@ views:
       # Monatliche Kosten
       - type: vertical-stack
         cards:
-          - type: statistic
+          - type: entity
             entity: sensor.tesla_energy_monthly
             name: Energie (Monat)
-            stat_type: state
-            period:
-              calendar:
-                period: month
+            icon: mdi:lightning-bolt
 
           - type: entity
             entity: sensor.tesla_charging_cost_monthly
