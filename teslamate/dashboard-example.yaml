@@ -97,6 +97,8 @@ views:
             icon: mdi:currency-eur
 
       # Batterie-Verlauf
+      # Hinweis: Sobald HA Long-Term Statistics gesammelt hat (nach ein paar Stunden),
+      # kann man auf statistics-graph mit min/max wechseln für feste 0-100% Skala
       - type: history-graph
         title: Batterie (24h)
         hours_to_show: 24
