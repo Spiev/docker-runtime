@@ -38,7 +38,7 @@ homeassistant:
     sensor.eui_SENSOR1_tempc_sht:
       device_class: "temperature"
       state_class: "measurement"
-      unit_of_measurement: "°C"
+      unit_of_measurement: °C
     sensor.eui_SENSOR1_hum_sht:
       unit_of_measurement: "%"
       device_class: "moisture"
@@ -46,7 +46,7 @@ homeassistant:
     sensor.eui_SENSOR2_tempc_sht:
       device_class: "temperature"
       state_class: "measurement"
-      unit_of_measurement: "°C"
+      unit_of_measurement: °C
     sensor.eui_SENSOR2_hum_sht:
       unit_of_measurement: "%"
       device_class: "moisture"
