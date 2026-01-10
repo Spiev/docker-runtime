@@ -27,7 +27,11 @@ freshrss/config/
 homeassistant/homeassistant/*
 !homeassistant/homeassistant/config/
 homeassistant/homeassistant/config/*
-!homeassistant/homeassistant/config/*.yaml
+# Only allow specific config templates (no secrets, automations, etc.)
+!homeassistant/homeassistant/config/configuration-example.yaml
+!homeassistant/homeassistant/config/mqtt.yaml
+!homeassistant/homeassistant/config/templates.yaml
+!homeassistant/homeassistant/config/command_line.yaml
 homeassistant/home-assistant-matter-hub/
 homeassistant/mosquitto/
 homeassistant/musicassistant/
