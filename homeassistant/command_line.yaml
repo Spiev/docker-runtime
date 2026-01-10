@@ -1,0 +1,63 @@
+# =============================================================================
+# Command Line Sensoren für Home Assistant
+# =============================================================================
+# Diese Datei enthält alle command_line-basierten Sensoren.
+# Wird in configuration.yaml eingebunden via: command_line: !include command_line.yaml
+#
+# HINWEIS: Diese Sensoren laufen auf dem Host-System und benötigen
+# entsprechende Berechtigungen im Docker Container.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Raspberry Pi Hardware Monitoring
+# -----------------------------------------------------------------------------
+- sensor:
+    name: Pi5 Fan Speed
+    unique_id: pi5_fan_rpm
+    scan_interval: 10
+    command: 'cat /sys/devices/platform/cooling_fan/hwmon/*/fan1_input'
+    unit_of_measurement: "RPM"
+    value_template: "{{ value }}"
+
+# -----------------------------------------------------------------------------
+# Webserver Monitoring
+# -----------------------------------------------------------------------------
+# Prüft ob die externen Dienste erreichbar sind
+# Ersetze die Domains mit deinen eigenen
+
+- sensor:
+    name: Photos Webserver Monitor
+    unique_id: photos_webserver_monitor
+    command: 'curl -s https://YOUR_PHOTOS_DOMAIN/api/server/ping | grep "pong" > /dev/null && echo "up" || echo "down!"'
+    scan_interval: 60
+
+- sensor:
+    name: Paperless Webserver Monitor
+    unique_id: paperless_webserver_monitor
+    command: 'curl -sI https://YOUR_PAPERLESS_DOMAIN/accounts/login/ | grep "HTTP/1.1 200 OK" > /dev/null && echo "up" || echo "down!"'
+    scan_interval: 60
+
+# -----------------------------------------------------------------------------
+# Weitere nützliche Command Line Sensoren (Beispiele)
+# -----------------------------------------------------------------------------
+# - sensor:
+#     name: CPU Temperature
+#     unique_id: cpu_temperature
+#     command: 'cat /sys/class/thermal/thermal_zone0/temp'
+#     unit_of_measurement: "°C"
+#     value_template: "{{ value | float / 1000 | round(1) }}"
+#     scan_interval: 30
+#
+# - sensor:
+#     name: Disk Usage Root
+#     unique_id: disk_usage_root
+#     command: "df -h / | awk 'NR==2 {print $5}' | tr -d '%'"
+#     unit_of_measurement: "%"
+#     scan_interval: 300
+#
+# - sensor:
+#     name: Memory Usage
+#     unique_id: memory_usage
+#     command: "free | awk 'NR==2 {printf \"%.1f\", $3/$2*100}'"
+#     unit_of_measurement: "%"
+#     scan_interval: 60
