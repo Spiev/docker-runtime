@@ -34,6 +34,9 @@ paperless/library/
 paperless/redisdata/
 paperless/postgres/
 pihole/etc-pihole/
+teslamate/postgres/
+teslamate/grafana/
+teslamate/import/
 
 # Exclude logfiles
 logs
