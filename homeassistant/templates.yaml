@@ -1,0 +1,56 @@
+# =============================================================================
+# Template Sensoren für Home Assistant
+# =============================================================================
+# Diese Datei enthält alle Template-basierten Sensoren.
+# Wird in configuration.yaml eingebunden via: template: !include templates.yaml
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Wetter-Sensoren (aus Weather Integration)
+# -----------------------------------------------------------------------------
+- sensor:
+    - name: "Outside temperature"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state: "{{ state_attr('weather.forecast_home', 'temperature') }}"
+
+    - name: "Outside Humidity"
+      unit_of_measurement: "%"
+      device_class: humidity
+      state: "{{ state_attr('weather.forecast_home', 'humidity') }}"
+
+# -----------------------------------------------------------------------------
+# Tesla Ladekosten
+# -----------------------------------------------------------------------------
+- sensor:
+    # Kosten der aktuellen/letzten Ladesession
+    - name: "Tesla Charging Cost Current"
+      unique_id: tesla_charging_cost_current
+      unit_of_measurement: "EUR"
+      icon: mdi:currency-eur
+      device_class: monetary
+      state: >
+        {{ (states('sensor.tesla_charge_energy_added') | float(0) * 0.45) | round(2) }}
+      attributes:
+        price_per_kwh: 0.45
+        energy_added: "{{ states('sensor.tesla_charge_energy_added') }}"
+
+    # Monatliche Kosten (basiert auf utility_meter)
+    - name: "Tesla Charging Cost Monthly"
+      unique_id: tesla_charging_cost_monthly
+      unit_of_measurement: "EUR"
+      icon: mdi:currency-eur
+      device_class: monetary
+      state: >
+        {{ (states('sensor.tesla_energy_monthly') | float(0) * 0.45) | round(2) }}
+
+# -----------------------------------------------------------------------------
+# Weitere Template-Sensoren (Beispiele)
+# -----------------------------------------------------------------------------
+# - sensor:
+#     - name: "Total Power Consumption"
+#       unit_of_measurement: "W"
+#       device_class: power
+#       state: >
+#         {{ states('sensor.device1_power') | float(0) +
+#            states('sensor.device2_power') | float(0) }}
