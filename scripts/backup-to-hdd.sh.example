@@ -274,13 +274,40 @@ HOMEASSISTANT_STATS=$(parse_restic_stats "$HOMEASSISTANT_OUTPUT")
 IFS='|' read -r homeassistant_files_new homeassistant_files_changed homeassistant_dirs_new homeassistant_added_size <<< "$HOMEASSISTANT_STATS"
 echo "Home Assistant backup complete: $homeassistant_files_new new files, $homeassistant_files_changed changed files"
 
+
+# ============================================================================
+# Backup Teslamate
+# ============================================================================
+
+echo ""
+echo "=========================================="
+echo "Starting Teslamate Backup"
+echo "=========================================="
+send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Exporting Teslamate DB...\"}"
+
+# Export Teslamate database
+DB_BACKUP_FILE="$DOCKER_BASE/teslamate/backup/testlamate_$(date +%Y-%m-%d_%H_%M_%S).sql.gz"
+echo "Exporting Teslamate database to $DB_BACKUP_FILE..."
+docker exec -t teslamate-db pg_dumpall -v -c -U teslamate | gzip > "$DB_BACKUP_FILE"
+
+send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Backing up Teslamate...\"}"
+
+# Run backup and capture output (works in both interactive and cron)
+TESLAMATE_OUTPUT=$(restic -r "$RESTIC_REPO" backup "$DOCKER_BASE/teslamate/backup" --verbose 2>&1)
+echo "$TESLAMATE_OUTPUT"
+TESLAMATE_STATS=$(parse_restic_stats "$TESLAMATE_OUTPUT")
+
+IFS='|' read -r testlamate_files_new teslamate_files_changed teslamate_dirs_new teslamate_added_size <<< "$TESLAMATE_STATS"
+echo "Teslamate backup complete: $teslamate_files_new new files, $teslamate_files_changed changed files"
+
+
 # ============================================================================
 # Calculate Totals
 # ============================================================================
 
-TOTAL_FILES_NEW=$((immich_files_new + paperless_files_new + homeassistant_files_new))
-TOTAL_FILES_CHANGED=$((immich_files_changed + paperless_files_changed + homeassistant_files_changed))
-TOTAL_DIRS_NEW=$((immich_dirs_new + paperless_dirs_new + homeassistant_dirs_new))
+TOTAL_FILES_NEW=$((immich_files_new + paperless_files_new + homeassistant_files_new + teslamate_files_new))
+TOTAL_FILES_CHANGED=$((immich_files_changed + paperless_files_changed + homeassistant_files_changed + teslamate_files_new))
+TOTAL_DIRS_NEW=$((immich_dirs_new + paperless_dirs_new + homeassistant_dirs_new + teslamate_dirs_new))
 
 # ============================================================================
 # Get Repository Stats
@@ -337,6 +364,8 @@ SUCCESS_JSON=$(cat <<EOF
   "paperless_files_changed": $paperless_files_changed,
   "homeassistant_files_new": $homeassistant_files_new,
   "homeassistant_files_changed": $homeassistant_files_changed,
+  "teslamate_files_new": $teslamate_files_new,
+  "teslamate_files_changed": $teslamate_files_changed,
   "repository_size_gb": $REPO_SIZE_GB,
   "snapshot_count": $SNAPSHOT_COUNT,
   "last_success_time": "$(date --iso-8601=seconds)"
