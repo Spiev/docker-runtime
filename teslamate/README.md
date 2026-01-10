@@ -18,13 +18,22 @@ Editiere `.env` und setze:
 - `MQTT_USERNAME`/`MQTT_PASSWORD`: Deine Mosquitto-Credentials
 - `GRAFANA_PASSWORD`: Sicheres Grafana-Passwort
 
-### 2. Container starten
+### 2. Grafana-Verzeichnis vorbereiten
+
+Grafana läuft als User 472, daher müssen die Berechtigungen stimmen:
+
+```bash
+mkdir -p grafana
+sudo chown -R 472:472 grafana
+```
+
+### 3. Container starten
 
 ```bash
 docker compose up -d
 ```
 
-### 3. Tesla Account verbinden
+### 4. Tesla Account verbinden
 
 1. Öffne http://raspberrypi:4000 (oder deine IP)
 2. Folge dem Login-Prozess
@@ -111,3 +120,12 @@ docker exec teslamate-db pg_dumpall -U teslamate | gzip > teslamate_backup_$(dat
 ### Grafana zeigt keine Daten
 - Warte einige Minuten nach dem ersten Start
 - Prüfe Datenbankverbindung in Grafana → Data Sources
+
+### Grafana startet nicht (Permission denied)
+Fehlermeldung: `GF_PATHS_DATA is not writable` oder `mkdir: can't create directory '/var/lib/grafana/plugins': Permission denied`
+
+Fix:
+```bash
+sudo chown -R 472:472 ~/docker/teslamate/grafana
+docker compose restart grafana
+```
