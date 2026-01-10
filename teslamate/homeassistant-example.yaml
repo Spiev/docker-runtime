@@ -72,6 +72,11 @@ mqtt:
       unit_of_measurement: "km"
       icon: mdi:counter
 
+    # Software Version
+    - name: "Tesla Software Version"
+      state_topic: "teslamate/cars/1/version"
+      icon: mdi:tag
+
     # Temperature
     - name: "Tesla Inside Temp"
       state_topic: "teslamate/cars/1/inside_temp"
@@ -112,15 +117,16 @@ utility_meter:
     cycle: monthly
     name: "Tesla Energy Monthly"
 
-# After adding utility_meter, create a template for monthly costs:
-# template:
-#   - sensor:
-#       - name: "Tesla Charging Cost Monthly"
-#         unique_id: tesla_charging_cost_monthly
-#         unit_of_measurement: "EUR"
-#         icon: mdi:currency-eur
-#         state: >
-#           {{ (states('sensor.tesla_energy_monthly') | float(0) * 0.45) | round(2) }}
+# Template sensor for monthly costs (uses utility_meter above):
+template:
+  - sensor:
+      - name: "Tesla Charging Cost Monthly"
+        unique_id: tesla_charging_cost_monthly
+        unit_of_measurement: "EUR"
+        icon: mdi:currency-eur
+        device_class: monetary
+        state: >
+          {{ (states('sensor.tesla_energy_monthly') | float(0) * 0.45) | round(2) }}
 
 # -----------------------------------------------------------------------------
 # Automations (Optional)
