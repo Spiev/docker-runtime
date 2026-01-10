@@ -35,20 +35,21 @@ docker compose up -d
 
 ### 4. Tesla Account verbinden
 
-1. Öffne http://raspberrypi:4000 (oder deine IP)
-2. Folge dem Login-Prozess
-3. **Wichtig für Model 3 Highland**: Virtual Key hinzufügen!
+Teslamate nutzt Token-basierte Authentifizierung:
 
-### Virtual Key (Pflicht für 2021+ Fahrzeuge)
+1. **Token generieren** mit einer Auth-App:
+   - iOS/macOS: [Auth app for Tesla](https://apps.apple.com/app/auth-app-for-tesla/id1552058613)
+   - Windows/Linux/macOS: [Tesla Auth CLI](https://github.com/adriankumpf/tesla_auth)
 
-Neuere Tesla-Fahrzeuge erfordern einen Virtual Key:
+2. Mit Deinem Tesla-Account in der Auth-App einloggen
 
-1. Gehe zu https://tesla.com/_ak/teslamate.example.com
-2. Ersetze `teslamate.example.com` mit deiner Domain (oder nutze localhost-Workaround)
-3. Bestätige in der Tesla-App auf deinem Handy
-4. Setze in `.env`: `VIRTUAL_KEY=true`
+3. **Access Token** und **Refresh Token** kopieren
 
-Siehe: https://docs.teslamate.org/docs/faq#why-do-i-need-to-add-a-virtual-key
+4. Öffne http://raspberrypi:4000 (oder deine IP)
+
+5. Tokens eingeben wenn danach gefragt wird
+
+Siehe: https://docs.teslamate.org/docs/faq
 
 ## Zugriff
 
