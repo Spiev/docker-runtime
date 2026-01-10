@@ -1,0 +1,136 @@
+# =============================================================================
+# Tesla Dashboard für Home Assistant
+# =============================================================================
+# So fügst Du das Dashboard hinzu:
+#
+# Option A: Über die UI
+#   1. Einstellungen → Dashboards → Dashboard hinzufügen
+#   2. Neues Dashboard erstellen
+#   3. Rechts oben: 3 Punkte → Raw-Konfigurationseditor
+#   4. Den Inhalt ab "views:" unten einfügen
+#
+# Option B: Einzelne Karten kopieren
+#   1. Bestehendes Dashboard öffnen
+#   2. Karte hinzufügen → Manuell (YAML)
+#   3. Einzelne card:-Blöcke kopieren
+#
+# Hinweis: Passe die entity IDs an, falls Du andere Namen verwendest!
+# =============================================================================
+
+views:
+  - title: Tesla
+    path: tesla
+    icon: mdi:car-electric
+    cards:
+      # -----------------------------------------------------------------
+      # Zeile 1: Status-Übersicht
+      # -----------------------------------------------------------------
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: |
+              # 🚗 Model 3
+            style: |
+              ha-card { background: transparent; box-shadow: none; }
+
+          # Status-Karte
+          - type: entity
+            entity: sensor.tesla_charging_state
+            name: Status
+            icon: mdi:car-electric
+
+      # Batterie-Gauge
+      - type: gauge
+        entity: sensor.tesla_battery_level
+        name: Batterie
+        min: 0
+        max: 100
+        severity:
+          green: 50
+          yellow: 20
+          red: 10
+        needle: true
+
+      # Reichweite
+      - type: vertical-stack
+        cards:
+          - type: entity
+            entity: sensor.tesla_rated_range
+            name: Reichweite (rated)
+            icon: mdi:map-marker-distance
+
+          - type: entity
+            entity: sensor.tesla_est_range
+            name: Reichweite (est.)
+            icon: mdi:speedometer
+
+      # -----------------------------------------------------------------
+      # Zeile 2: Laden
+      # -----------------------------------------------------------------
+      - type: entities
+        title: Laden
+        icon: mdi:ev-station
+        entities:
+          - entity: sensor.tesla_plugged_in
+            name: Eingesteckt
+          - entity: sensor.tesla_charger_power
+            name: Ladeleistung
+          - entity: sensor.tesla_charge_energy_added
+            name: Energie geladen
+          - entity: sensor.tesla_charging_cost_current
+            name: Kosten (Ladung)
+
+      # Monatliche Kosten
+      - type: vertical-stack
+        cards:
+          - type: statistic
+            entity: sensor.tesla_energy_monthly
+            name: Energie (Monat)
+            stat_type: state
+            period:
+              calendar:
+                period: month
+
+          - type: entity
+            entity: sensor.tesla_charging_cost_monthly
+            name: Kosten (Monat)
+            icon: mdi:currency-eur
+
+      # Batterie-Verlauf
+      - type: history-graph
+        title: Batterie (24h)
+        hours_to_show: 24
+        entities:
+          - entity: sensor.tesla_battery_level
+            name: Batterie
+
+      # -----------------------------------------------------------------
+      # Zeile 3: Fahrzeug-Infos
+      # -----------------------------------------------------------------
+      - type: entities
+        title: Fahrzeug
+        icon: mdi:car-info
+        entities:
+          - entity: sensor.tesla_odometer
+            name: Kilometerstand
+          - entity: sensor.tesla_software_version
+            name: Software-Version
+
+      # Temperaturen mit History
+      - type: history-graph
+        title: Temperaturen (24h)
+        hours_to_show: 24
+        entities:
+          - entity: sensor.tesla_inside_temp
+            name: Innen
+          - entity: sensor.tesla_outside_temp
+            name: Außen
+
+      # Aktuelle Temperaturen
+      - type: glance
+        title: Temperaturen aktuell
+        entities:
+          - entity: sensor.tesla_inside_temp
+            name: Innen
+          - entity: sensor.tesla_outside_temp
+            name: Außen
