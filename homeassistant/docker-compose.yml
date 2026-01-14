@@ -1,7 +1,7 @@
 services:
   homeassistant:
     container_name: homeassistant
-    image: homeassistant/home-assistant:stable
+    image: homeassistant/home-assistant:2026.1.1
     devices:
       - /dev/ttyACM0 # mappes zigbee Dongel to container
     network_mode: "host"
