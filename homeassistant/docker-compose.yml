@@ -49,4 +49,4 @@ services:
     environment:
       # Provide logging level as environment variable.
       # default=info, possible=(critical, error, warning, info, debug)
-      - LOG_LEVEL=info
+      - LOG_LEVEL=error
