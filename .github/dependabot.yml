@@ -1,11 +1,10 @@
 version: 2
 updates:
-  # Proxy: nginx, certbot
+  # Proxy: nginx, certbot (daily - internet-facing, first line of defense)
   - package-ecosystem: "docker-compose"
     directory: "/proxy"
     schedule:
-      interval: "weekly"
-      day: "sunday"
+      interval: "daily"
       time: "03:00"
       timezone: "Europe/Berlin"
     commit-message:
@@ -34,8 +33,6 @@ updates:
       prefix: "chore(deps)"
 
   # Immich: server, ML, redis, postgres
-  # Note: immich-server and immich-machine-learning use ${IMMICH_VERSION} env var
-  # Dependabot will update the pinned valkey and postgres images
   - package-ecosystem: "docker-compose"
     directory: "/immich"
     schedule:
