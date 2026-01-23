@@ -1,0 +1,80 @@
+version: 2
+updates:
+  # Proxy: nginx, certbot
+  - package-ecosystem: "docker-compose"
+    directory: "/proxy"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "03:00"
+      timezone: "Europe/Berlin"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # Home Assistant stack: HA, mosquitto, matter-hub, music-assistant
+  - package-ecosystem: "docker-compose"
+    directory: "/homeassistant"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "03:00"
+      timezone: "Europe/Berlin"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # Paperless: webserver, postgres, redis, gotenberg, tika
+  - package-ecosystem: "docker-compose"
+    directory: "/paperless"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "03:00"
+      timezone: "Europe/Berlin"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # Immich: server, ML, redis, postgres
+  # Note: immich-server and immich-machine-learning use ${IMMICH_VERSION} env var
+  # Dependabot will update the pinned valkey and postgres images
+  - package-ecosystem: "docker-compose"
+    directory: "/immich"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "03:00"
+      timezone: "Europe/Berlin"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # Pi-hole
+  - package-ecosystem: "docker-compose"
+    directory: "/pihole"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "03:00"
+      timezone: "Europe/Berlin"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # FreshRSS
+  - package-ecosystem: "docker-compose"
+    directory: "/freshrss"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "03:00"
+      timezone: "Europe/Berlin"
+    commit-message:
+      prefix: "chore(deps)"
+
+  # Teslamate: teslamate, postgres, grafana
+  - package-ecosystem: "docker-compose"
+    directory: "/teslamate"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "03:00"
+      timezone: "Europe/Berlin"
+    commit-message:
+      prefix: "chore(deps)"

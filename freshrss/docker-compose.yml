@@ -1,6 +1,6 @@
 services:
   freshrss:
-    image: lscr.io/linuxserver/freshrss:latest
+    image: lscr.io/linuxserver/freshrss:1.28.0-ls292
     container_name: freshrss
     environment:
       # PUID und PGID deines Benutzers (z.B. 1000 für den Standard-Pi-Nutzer)

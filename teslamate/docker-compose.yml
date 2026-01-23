@@ -1,6 +1,6 @@
 services:
   teslamate:
-    image: teslamate/teslamate:latest
+    image: teslamate/teslamate:2.2.0
     container_name: teslamate
     restart: unless-stopped
     env_file:
@@ -36,7 +36,7 @@ services:
       - ./postgres:/var/lib/postgresql/data
 
   grafana:
-    image: teslamate/grafana:latest
+    image: teslamate/grafana:2.2.0
     container_name: teslamate-grafana
     restart: unless-stopped
     environment:
