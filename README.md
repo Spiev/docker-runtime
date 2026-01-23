@@ -6,6 +6,7 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 
 - **Production-tested** configurations for Raspberry Pi
 - **Security-hardened** with fail2ban, rate limiting, and SSL
+- **Automated dependency updates** via GitHub Dependabot
 - **MQTT-based monitoring** integration with Home Assistant
 - **Automated backups** with Restic
 - **Template-based setup** - easy to customize for your environment
@@ -92,11 +93,7 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 
    # Production scripts (adjust paths for your setup)
    cp backup-to-hdd.sh.example backup-to-hdd.sh
-   cp nginx_update.sh.example nginx_update.sh
-   cp check_raspi_update.sh.example check_raspi_update.sh
-
-   # Make scripts executable
-   chmod +x *.sh
+   chmod +x backup-to-hdd.sh
    ```
 
 5. **Start services:**
@@ -111,6 +108,8 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 ## 📂 Repository Structure
 
 ```
+├── .github/
+│   └── dependabot.yml  # Automated Docker image updates
 ├── proxy/              # Nginx reverse proxy + Let's Encrypt
 ├── pihole/             # DNS-based ad blocker
 ├── homeassistant/      # Home automation stack (config templates: *.yaml.example)
@@ -154,18 +153,18 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 ## 📊 Monitoring
 
 ### MQTT Integration
-All monitoring scripts send status updates to Home Assistant via MQTT:
+Monitoring scripts send status updates to Home Assistant via MQTT:
 
 - **Backup Status** - Real-time backup progress and statistics
-- **Nginx Updates** - Docker image update notifications
 - **System Updates** - Raspberry Pi package and firmware status
 
 ### Home Assistant Sensors
 
 Scripts automatically create MQTT Discovery sensors:
 - `sensor.restic_backup_status` - Backup state and metrics
-- `sensor.nginx_docker_status` - Nginx update status
 - `sensor.rpi_updates` - System update status
+
+**Note:** Docker image updates are now managed via Dependabot (see Service Updates section).
 
 Example automation:
 ```yaml
@@ -318,14 +317,19 @@ docker exec proxy-nginx-1 ls -la /etc/letsencrypt/live/
 ```
 
 ### Service Updates
-```bash
-# Update specific service
-cd immich
-docker compose pull
-docker compose up -d
 
-# Automated Nginx updates
-./scripts/nginx_update.sh
+All Docker images are pinned to specific versions and managed via **GitHub Dependabot**:
+
+- **Proxy (nginx, certbot)**: Checked **daily** (internet-facing, security-critical)
+- **All other services**: Checked **weekly** on Sundays
+
+**Workflow:**
+1. Dependabot creates PRs when new versions are available
+2. Review changelog and merge PR
+3. Deploy update:
+```bash
+cd <service-directory>
+docker compose pull && docker compose up -d
 ```
 
 ### Fail2ban Management
@@ -349,7 +353,6 @@ sudo fail2ban-client banned
    - Modify `proxy/nginx/default.conf.template` for your services
 
 2. **Script Paths:**
-   - `scripts/nginx_update.sh`: Set `COMPOSE_DIR` to your proxy path
    - `scripts/backup-to-hdd.sh`: Set `DOCKER_BASE` to your Docker directory
 
 3. **Hardware Dependencies:**
