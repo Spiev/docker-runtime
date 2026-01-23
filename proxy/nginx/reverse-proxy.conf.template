@@ -8,7 +8,8 @@
 # - DOMAIN4: HomeAssistant (SmartHome System)
 #
 # Environment variables (set in docker-compose.yml from .env):
-# - ${DOMAIN1}, ${DOMAIN2}, ${DOMAIN3}: Domain names for each service
+# - ${DOMAIN1}, ${DOMAIN2}, ${DOMAIN3}, ${DOMAIN4}: Domain names for each service
+# - ${BACKEND_IP}: IP address of the backend server running the services
 #
 # Maintainer: Stefan
 # Last updated: 2025-12-31
@@ -59,19 +60,19 @@ error_log /dev/stdout;
 # ============================================================================
 
 upstream immich_backend {
-    server 192.168.178.113:2283;
+    server ${BACKEND_IP}:2283;
 }
 
 upstream paperless_backend {
-    server 192.168.178.113:8000;
+    server ${BACKEND_IP}:8000;
 }
 
 upstream freshrss_backend {
-    server 192.168.178.113:8080;
+    server ${BACKEND_IP}:8080;
 }
 
 upstream homeassistant_backend {
-    server 192.168.178.113:8123;
+    server ${BACKEND_IP}:8123;
 }
 
 
