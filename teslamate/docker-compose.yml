@@ -33,6 +33,7 @@ services:
       - POSTGRES_PASSWORD=${TM_DB_PASS}
       - POSTGRES_DB=${TM_DB_NAME}
     volumes:
+      # PostgreSQL 18+ uses version-specific subdirectory (18/docker)
       - ./postgres:/var/lib/postgresql
 
   grafana:

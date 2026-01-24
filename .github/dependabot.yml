@@ -31,10 +31,6 @@ updates:
       timezone: "Europe/Berlin"
     commit-message:
       prefix: "chore(deps)"
-    ignore:
-      # PostgreSQL major upgrades require pg_upgrade migration
-      - dependency-name: "postgres"
-        update-types: ["version-update:semver-major"]
 
   # Immich: server, ML, redis, postgres
   - package-ecosystem: "docker-compose"
@@ -46,6 +42,11 @@ updates:
       timezone: "Europe/Berlin"
     commit-message:
       prefix: "chore(deps)"
+    ignore:
+      # Immich uses custom postgres image with VectorChord extension
+      # Wait for official Immich support before upgrading
+      - dependency-name: "immich-app/postgres"
+        update-types: ["version-update:semver-major"]
 
   # Pi-hole
   - package-ecosystem: "docker-compose"
@@ -79,7 +80,3 @@ updates:
       timezone: "Europe/Berlin"
     commit-message:
       prefix: "chore(deps)"
-    ignore:
-      # PostgreSQL major upgrades require pg_upgrade migration
-      - dependency-name: "postgres"
-        update-types: ["version-update:semver-major"]
