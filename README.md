@@ -94,6 +94,11 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
    # Production scripts (adjust paths for your setup)
    cp backup-to-hdd.sh.example backup-to-hdd.sh
    chmod +x backup-to-hdd.sh
+
+   # Nginx auto-update (pulls Dependabot changes and redeploys)
+   cp nginx_update.sh.example nginx_update.sh
+   chmod +x nginx_update.sh
+   # Edit GIT_REPO_DIR if different from $HOME/docker
    ```
 
 5. **Start services:**
@@ -163,8 +168,10 @@ Monitoring scripts send status updates to Home Assistant via MQTT:
 Scripts automatically create MQTT Discovery sensors:
 - `sensor.restic_backup_status` - Backup state and metrics
 - `sensor.rpi_updates` - System update status
-
-**Note:** Docker image updates are now managed via Dependabot (see Service Updates section).
+- `sensor.nginx_version` - Currently installed nginx version
+- `sensor.nginx_update_status` - Update status (up_to_date, updated, error)
+- `sensor.nginx_last_check` - When the update script last ran
+- `sensor.nginx_last_update` - When nginx was last updated
 
 Example automation:
 ```yaml
@@ -323,7 +330,21 @@ All Docker images are pinned to specific versions and managed via **GitHub Depen
 - **Proxy (nginx, certbot)**: Checked **daily** (internet-facing, security-critical)
 - **All other services**: Checked **weekly** on Sundays
 
-**Workflow:**
+**Nginx Auto-Update Workflow:**
+```
+1. Dependabot creates PR for new nginx version (daily at 03:00)
+2. GitHub Action auto-merges minor/patch updates
+3. nginx_update.sh (via cron) pulls changes and redeploys
+4. Status sent to Home Assistant via MQTT
+```
+
+Setup cron for nginx auto-updates:
+```bash
+crontab -e
+# Add: 0 4,8,12,16,20,0 * * * /path/to/scripts/nginx_update.sh >> /path/to/logs/nginx_update.log 2>&1
+```
+
+**Other Services (manual deployment):**
 1. Dependabot creates PRs when new versions are available
 2. Review changelog and merge PR
 3. Deploy update:
