@@ -1,270 +1,390 @@
 #!/bin/bash
-set -euo pipefail  # Exit on error, undefined variables, and pipe failures
+set -euo pipefail
 
 # ============================================================================
-# Nginx Update Script with MQTT Monitoring
+# Nginx Auto-Update Script with MQTT Monitoring
 # ============================================================================
-# This script updates the nginx:stable Docker image and sends status updates
-# to Home Assistant via MQTT for monitoring and alerting.
+#
+# This script syncs the local git repo with GitHub (to get Dependabot updates)
+# and redeploys nginx if the docker-compose.yml has changed.
+#
+# Workflow:
+#   1. Dependabot creates PR for new nginx version (daily at 03:00)
+#   2. GitHub Action auto-merges minor/patch updates
+#   3. This script (via cron) pulls changes and redeploys
 #
 # Usage:
 #   ./nginx_update.sh
+#
+# Cron example (every 4 hours, starting at 04:00 to catch Dependabot updates):
+#   0 4,8,12,16,20,0 * * * /home/stefan/docker/scripts/nginx_update.sh >> /home/stefan/docker/logs/nginx_update.log 2>&1
 #
 # Requirements:
 #   - Docker with compose plugin
 #   - mosquitto_pub (mosquitto-clients package)
 #   - jq (JSON processor)
+#   - Git repository with Dependabot configured
 #   - .mqtt_credentials file with MQTT_USER and MQTT_PASSWORD
+#
 # ============================================================================
 
 # For logging details
 echo "Nginx update script started at $(date --iso-8601=ns)"
 
 # ============================================================================
-# Configuration - Adjust these for your environment
+# Configuration - ADJUST THESE PATHS FOR YOUR ENVIRONMENT
 # ============================================================================
 
-SCRIPT_DIR="$(dirname "$0")"
-IMAGE_TAG="nginx:stable-alpine"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Path to your docker-compose directory for the nginx proxy
-# Adjust this to match your setup (e.g., /home/user/docker/proxy)
-COMPOSE_DIR="${COMPOSE_DIR:-$HOME/docker/proxy}"
+# Path to git repository containing docker-compose files
+GIT_REPO_DIR="${GIT_REPO_DIR:-$HOME/docker}"
 
-# MQTT Topics for Home Assistant
+# Path to proxy service directory
+PROXY_DIR="$GIT_REPO_DIR/proxy"
+
+# Container name (adjust if different)
+NGINX_CONTAINER="proxy-nginx-1"
+
+# MQTT Configuration
 MQTT_HOST="localhost"
 MQTT_PORT="1883"
-STATE_TOPIC="homeassistant/sensor/nginx_update_status/state"
-ATTRIBUTES_TOPIC="homeassistant/sensor/nginx_update_status/attributes"
-DISCOVERY_TOPIC="homeassistant/sensor/nginx_update_status/config"
+STATE_TOPIC="docker/nginx/state"
 
 # Device info for Home Assistant
-DEVICE_ID="nginx_update"
-DEVICE_NAME="Nginx Update"
+DEVICE_ID="docker_nginx_proxy"
+DEVICE_NAME="Nginx Reverse Proxy"
 
 # Track script start time for duration calculation
 START_TIME=$(date +%s)
 
 # ============================================================================
-# Load MQTT Credentials
+# Load Credentials
 # ============================================================================
 
-MQTT_CREDENTIALS="$SCRIPT_DIR/.mqtt_credentials"
-if [[ ! -f "$MQTT_CREDENTIALS" ]]; then
-    echo "ERROR: MQTT credentials file not found at $MQTT_CREDENTIALS" >&2
+CREDENTIALS_FILE="$SCRIPT_DIR/.mqtt_credentials"
+
+if [[ ! -f "$CREDENTIALS_FILE" ]]; then
+    echo "ERROR: MQTT credentials file not found at $CREDENTIALS_FILE" >&2
     echo "Please create it from .mqtt_credentials.example" >&2
     exit 1
 fi
 
 # Check file permissions (should be 600)
-MQTT_PERMS=$(stat -c %a "$MQTT_CREDENTIALS" 2>/dev/null || stat -f %A "$MQTT_CREDENTIALS")
-if [[ "$MQTT_PERMS" != "600" ]]; then
-    echo "WARNING: Insecure permissions on $MQTT_CREDENTIALS (found: $MQTT_PERMS, expected: 600)" >&2
+PERMS=$(stat -c %a "$CREDENTIALS_FILE" 2>/dev/null || stat -f %A "$CREDENTIALS_FILE")
+if [[ "$PERMS" != "600" ]]; then
+    echo "WARNING: Insecure permissions on $CREDENTIALS_FILE (found: $PERMS, expected: 600)" >&2
 fi
 
-source "$MQTT_CREDENTIALS"
+source "$CREDENTIALS_FILE"
 
-# Validate required MQTT variables are set
+# Validate required variables
 if [[ -z "${MQTT_USER:-}" ]] || [[ -z "${MQTT_PASSWORD:-}" ]]; then
-    echo "ERROR: MQTT_USER or MQTT_PASSWORD not set in $MQTT_CREDENTIALS" >&2
+    echo "ERROR: MQTT_USER or MQTT_PASSWORD not set in $CREDENTIALS_FILE" >&2
     exit 1
 fi
 
 # ============================================================================
-# Helper Functions - MQTT
+# Helper Functions
 # ============================================================================
 
-# Send MQTT Discovery message (only needed once, but idempotent)
+# Send MQTT Discovery messages (idempotent, uses retain flag)
 send_discovery() {
-    local discovery_payload=$(cat <<EOF
+    echo "Sending MQTT Discovery messages..."
+
+    # Sensor 1: Installed Version
+    local discovery_version=$(cat <<EOF
 {
-  "name": "Status",
-  "object_id": "nginx_update_status",
-  "unique_id": "nginx_update_status",
+  "name": "Version",
+  "object_id": "nginx_version",
+  "unique_id": "nginx_proxy_version",
   "state_topic": "$STATE_TOPIC",
-  "json_attributes_topic": "$ATTRIBUTES_TOPIC",
-  "icon": "mdi:update",
+  "value_template": "{{ value_json.installed_version }}",
+  "icon": "mdi:server",
   "device": {
     "identifiers": ["$DEVICE_ID"],
     "name": "$DEVICE_NAME",
-    "model": "Nginx Update Script",
-    "manufacturer": "Homelab"
+    "model": "nginx",
+    "manufacturer": "Docker"
   }
 }
 EOF
 )
     mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" \
-      -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
-      -t "$DISCOVERY_TOPIC" \
-      -m "$discovery_payload" \
-      -r  # Retain discovery message
-}
+        -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
+        -t "homeassistant/sensor/nginx_version/config" \
+        -m "$discovery_version" -r
 
-# Send state update
-send_state() {
-    local state="$1"
-    echo "MQTT: Sending state: $state"
-    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" \
-      -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
-      -t "$STATE_TOPIC" \
-      -m "$state"
-}
-
-# Send attributes (JSON with update details)
-send_attributes() {
-    local attributes="$1"
-    echo "MQTT: Sending attributes: $attributes"
-    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" \
-      -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
-      -t "$ATTRIBUTES_TOPIC" \
-      -m "$attributes"
-}
-
-# ============================================================================
-# Cleanup and Error Handling
-# ============================================================================
-
-cleanup() {
-    local exit_code=$?
-    local end_time=$(date +%s)
-    local duration=$((end_time - START_TIME))
-
-    if [ $exit_code -ne 0 ]; then
-        echo "ERROR: Nginx update failed with exit code $exit_code"
-
-        local error_json=$(cat <<EOF
+    # Sensor 2: Update Status
+    local discovery_status=$(cat <<EOF
 {
-  "last_run": "$(date --iso-8601=seconds)",
-  "duration_seconds": $duration,
-  "error": "Update failed with exit code $exit_code",
-  "last_error_time": "$(date --iso-8601=seconds)",
-  "old_version": "${OLD_VERSION:-unknown}",
-  "old_digest": "${CURRENT_DIGEST:-unknown}"
+  "name": "Update Status",
+  "object_id": "nginx_update_status",
+  "unique_id": "nginx_proxy_update_status",
+  "state_topic": "$STATE_TOPIC",
+  "value_template": "{{ value_json.status }}",
+  "icon": "mdi:update",
+  "device": {
+    "identifiers": ["$DEVICE_ID"],
+    "name": "$DEVICE_NAME",
+    "model": "nginx",
+    "manufacturer": "Docker"
+  }
 }
 EOF
 )
-        send_state "failed"
-        send_attributes "$error_json"
+    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" \
+        -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
+        -t "homeassistant/sensor/nginx_update_status/config" \
+        -m "$discovery_status" -r
+
+    # Sensor 3: Last Check
+    local discovery_last_check=$(cat <<EOF
+{
+  "name": "Last Check",
+  "object_id": "nginx_last_check",
+  "unique_id": "nginx_proxy_last_check",
+  "state_topic": "$STATE_TOPIC",
+  "value_template": "{{ value_json.last_check }}",
+  "device_class": "timestamp",
+  "icon": "mdi:clock-check",
+  "device": {
+    "identifiers": ["$DEVICE_ID"],
+    "name": "$DEVICE_NAME",
+    "model": "nginx",
+    "manufacturer": "Docker"
+  }
+}
+EOF
+)
+    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" \
+        -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
+        -t "homeassistant/sensor/nginx_last_check/config" \
+        -m "$discovery_last_check" -r
+
+    # Sensor 4: Last Update (when an actual update was performed)
+    local discovery_last_update=$(cat <<EOF
+{
+  "name": "Last Update",
+  "object_id": "nginx_last_update",
+  "unique_id": "nginx_proxy_last_update",
+  "state_topic": "$STATE_TOPIC",
+  "value_template": "{{ value_json.last_update }}",
+  "device_class": "timestamp",
+  "icon": "mdi:clock-alert",
+  "device": {
+    "identifiers": ["$DEVICE_ID"],
+    "name": "$DEVICE_NAME",
+    "model": "nginx",
+    "manufacturer": "Docker"
+  }
+}
+EOF
+)
+    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" \
+        -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
+        -t "homeassistant/sensor/nginx_last_update/config" \
+        -m "$discovery_last_update" -r
+
+    echo "MQTT Discovery messages sent"
+}
+
+# Send state update (with retain for persistent state)
+send_state() {
+    local payload="$1"
+    echo "Sending state: $payload"
+    mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" \
+        -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
+        -t "$STATE_TOPIC" \
+        -m "$payload" -r
+}
+
+# Get current nginx version from running container
+get_installed_version() {
+    if docker ps --format '{{.Names}}' | grep -q "^${NGINX_CONTAINER}$"; then
+        docker exec "$NGINX_CONTAINER" nginx -v 2>&1 | sed 's/.*nginx\///' || echo "unknown"
+    else
+        echo "container_not_running"
+    fi
+}
+
+# Get pinned version from docker-compose.yml
+get_pinned_version() {
+    grep -E "^\s*image:\s*nginx:" "$PROXY_DIR/docker-compose.yml" 2>/dev/null | \
+        sed -E 's/.*nginx:([^[:space:]]+).*/\1/' | \
+        sed 's/-alpine$//' || echo "unknown"
+}
+
+# Read previous state to preserve last_update timestamp
+get_previous_last_update() {
+    if command -v mosquitto_sub &> /dev/null; then
+        local prev_state
+        prev_state=$(timeout 2 mosquitto_sub -h "$MQTT_HOST" -p "$MQTT_PORT" \
+            -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
+            -t "$STATE_TOPIC" -C 1 2>/dev/null || echo "{}")
+        echo "$prev_state" | jq -r '.last_update // empty' 2>/dev/null || echo ""
+    else
+        echo ""
+    fi
+}
+
+# ============================================================================
+# Error Handling
+# ============================================================================
+
+# Track state for error handler
+UPDATE_STATUS="checking"
+VERSION_BEFORE=""
+
+cleanup() {
+    local exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        echo "ERROR: Script failed with exit code $exit_code"
+
+        local end_time=$(date +%s)
+        local duration=$((end_time - START_TIME))
+        local timestamp=$(date --iso-8601=seconds)
+        local prev_last_update=$(get_previous_last_update)
+
+        local error_payload=$(cat <<EOF
+{
+  "installed_version": "${VERSION_BEFORE:-unknown}",
+  "pinned_version": "$(get_pinned_version)",
+  "status": "error",
+  "last_check": "$timestamp",
+  "last_update": ${prev_last_update:+\"$prev_last_update\"}${prev_last_update:-null},
+  "duration_seconds": $duration,
+  "error": "Script failed with exit code $exit_code"
+}
+EOF
+)
+        send_state "$error_payload"
     fi
 }
 
 trap cleanup EXIT
 
 # ============================================================================
-# Main Update Logic
+# Main Process
 # ============================================================================
 
-# Send discovery message (idempotent - safe to call every time)
+# Send MQTT Discovery (idempotent, safe to run every time)
 send_discovery
 
-# Send initial state
-send_state "running"
+# Get version before any changes
+VERSION_BEFORE=$(get_installed_version)
+echo "Current installed version: $VERSION_BEFORE"
 
-echo "🔍 Checking for latest $IMAGE_TAG arm64 image..."
+# Track if we performed an update
+UPDATE_PERFORMED=false
 
-# Get latest arm64 digest from Docker Hub
-LATEST_DIGEST=$(docker manifest inspect $IMAGE_TAG 2>/dev/null | \
-  jq -r '.manifests[] | select((.platform.architecture == "arm64" or .platform.architecture == "aarch64") and .platform.os == "linux") | .digest' | \
-  head -n1)
+# 1. Change to git repo and check for updates
+echo "Checking for updates from GitHub..."
+cd "$GIT_REPO_DIR"
 
-if [ -z "$LATEST_DIGEST" ]; then
-  echo "❌ ERROR: Could not determine digest"
-  exit 1
+# Ensure we're on main branch
+CURRENT_BRANCH=$(git branch --show-current)
+if [[ "$CURRENT_BRANCH" != "main" ]]; then
+    echo "WARNING: Not on main branch (currently on: $CURRENT_BRANCH), switching to main"
+    git checkout main
 fi
 
-echo "📦 Latest digest: $LATEST_DIGEST"
+# Fetch latest changes from remote
+git fetch origin main
 
-# Check current digest
-# Multi-platform images have multiple RepoDigests (manifest list + platform-specific)
-# We need to check both against the remote digest
-CURRENT_DIGEST_1=$(docker image inspect $IMAGE_TAG --format='{{index .RepoDigests 0}}' 2>/dev/null | cut -d'@' -f2)
-CURRENT_DIGEST_2=$(docker image inspect $IMAGE_TAG --format='{{index .RepoDigests 1}}' 2>/dev/null | cut -d'@' -f2)
+LOCAL_HASH=$(git rev-parse HEAD)
+REMOTE_HASH=$(git rev-parse origin/main)
 
-# For output: Use the first non-empty digest
-CURRENT_DIGEST="${CURRENT_DIGEST_1:-$CURRENT_DIGEST_2}"
+if [[ "$LOCAL_HASH" != "$REMOTE_HASH" ]]; then
+    echo "Changes detected in remote, pulling..."
 
-# Get current version before potential update
-# Note: Adjust container name if different (e.g., nginx-nginx-1, proxy_nginx_1)
-CONTAINER_NAME=$(docker compose -f "$COMPOSE_DIR/docker-compose.yml" ps nginx --format json 2>/dev/null | jq -r '.[0].Name' 2>/dev/null || echo "proxy-nginx-1")
-OLD_VERSION=$(docker exec $CONTAINER_NAME nginx -v 2>&1 | awk -F'/' '{print $2}' || echo "unknown")
+    # Check if proxy/docker-compose.yml will change
+    PROXY_CHANGED=$(git diff --name-only HEAD origin/main | grep -c "^proxy/docker-compose.yml$" || true)
 
-# Check if already up to date (check both digests for multi-platform images)
-if [ "$CURRENT_DIGEST_1" = "$LATEST_DIGEST" ] || [ "$CURRENT_DIGEST_2" = "$LATEST_DIGEST" ]; then
-  echo "✅ Image is already up to date!"
+    # Pull the changes
+    git pull --ff-only origin main
 
-  # Calculate duration
-  END_TIME=$(date +%s)
-  DURATION=$((END_TIME - START_TIME))
+    if [[ "$PROXY_CHANGED" -gt 0 ]]; then
+        echo "proxy/docker-compose.yml changed, updating nginx..."
 
-  # Send success state with "already up to date" info
-  success_json=$(cat <<EOF
-{
-  "last_run": "$(date --iso-8601=seconds)",
-  "duration_seconds": $DURATION,
-  "old_version": "$OLD_VERSION",
-  "new_version": "$OLD_VERSION",
-  "old_digest": "${CURRENT_DIGEST:0:12}",
-  "new_digest": "${LATEST_DIGEST:0:12}",
-  "update_needed": false,
-  "last_success_time": "$(date --iso-8601=seconds)",
-  "last_error_time": null
-}
-EOF
-)
-  send_state "already_up_to_date"
-  send_attributes "$success_json"
+        cd "$PROXY_DIR"
 
-  # Disable trap (we handled success manually)
-  trap - EXIT
-  exit 0
+        # Pull new image
+        echo "Pulling new nginx image..."
+        docker compose pull nginx
+
+        # Recreate container with new image
+        echo "Recreating nginx container..."
+        docker compose up -d nginx
+
+        # Wait for container to be ready
+        echo "Waiting for container to start..."
+        sleep 5
+
+        # Verify container is running
+        if docker ps --format '{{.Names}}' | grep -q "^${NGINX_CONTAINER}$"; then
+            UPDATE_PERFORMED=true
+            echo "Nginx container updated successfully!"
+        else
+            echo "ERROR: Container failed to start!"
+            exit 1
+        fi
+
+        # Cleanup old images
+        echo "Cleaning up old images..."
+        docker image prune -f
+    else
+        echo "No changes to proxy/docker-compose.yml, skipping nginx update"
+    fi
+else
+    echo "Already up to date with origin/main"
 fi
 
-echo "⬇️  Pulling new image by digest..."
-docker pull nginx@$LATEST_DIGEST
-
-echo "🏷️  Tagging as nginx:stable..."
-docker tag nginx@$LATEST_DIGEST $IMAGE_TAG
-
-echo "🔄 Stopping container..."
-cd $COMPOSE_DIR
-docker compose down nginx
-
-echo "🚀 Starting container..."
-docker compose up -d nginx
-
-echo "🧹 Cleaning up old images..."
-docker image prune -f
-
-echo "✅ Update completed!"
-
-# Get new version
-NEW_VERSION=$(docker exec $CONTAINER_NAME nginx -v 2>&1 | awk -F'/' '{print $2}' || echo "unknown")
-echo "📌 New version: $NEW_VERSION (was: $OLD_VERSION)"
-
-# Calculate duration
+# 2. Collect final state
+VERSION_AFTER=$(get_installed_version)
+PINNED_VERSION=$(get_pinned_version)
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
+TIMESTAMP=$(date --iso-8601=seconds)
 
-# Send success state with full update details
-success_json=$(cat <<EOF
+echo "Version after: $VERSION_AFTER"
+echo "Pinned version: $PINNED_VERSION"
+
+# Determine status
+if [[ "$UPDATE_PERFORMED" == "true" ]]; then
+    UPDATE_STATUS="updated"
+    LAST_UPDATE="$TIMESTAMP"
+else
+    UPDATE_STATUS="up_to_date"
+    # Preserve previous last_update timestamp
+    LAST_UPDATE=$(get_previous_last_update)
+fi
+
+# 3. Build and send MQTT state
+if [[ -n "$LAST_UPDATE" ]]; then
+    LAST_UPDATE_JSON="\"$LAST_UPDATE\""
+else
+    LAST_UPDATE_JSON="null"
+fi
+
+PAYLOAD=$(cat <<EOF
 {
-  "last_run": "$(date --iso-8601=seconds)",
+  "installed_version": "$VERSION_AFTER",
+  "pinned_version": "$PINNED_VERSION",
+  "status": "$UPDATE_STATUS",
+  "last_check": "$TIMESTAMP",
+  "last_update": $LAST_UPDATE_JSON,
   "duration_seconds": $DURATION,
-  "old_version": "$OLD_VERSION",
-  "new_version": "$NEW_VERSION",
-  "old_digest": "${CURRENT_DIGEST:0:12}",
-  "new_digest": "${LATEST_DIGEST:0:12}",
-  "update_needed": true,
-  "last_success_time": "$(date --iso-8601=seconds)",
-  "last_error_time": null
+  "update_performed": $UPDATE_PERFORMED,
+  "version_changed": $([ "$VERSION_BEFORE" != "$VERSION_AFTER" ] && echo true || echo false),
+  "old_version": "$VERSION_BEFORE"
 }
 EOF
 )
 
-send_state "success"
-send_attributes "$success_json"
+send_state "$PAYLOAD"
 
-# Disable trap (we handled success manually)
+# Disable trap (success path)
 trap - EXIT
 
 echo "Script completed at $(date --iso-8601=ns)"
