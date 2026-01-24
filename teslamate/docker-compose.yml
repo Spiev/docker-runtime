@@ -25,7 +25,7 @@ services:
       - teslamate-db
 
   teslamate-db:
-    image: postgres:18-alpine
+    image: postgres:17-alpine
     container_name: teslamate-db
     restart: unless-stopped
     environment:
