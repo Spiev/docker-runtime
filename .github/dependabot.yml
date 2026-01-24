@@ -31,6 +31,10 @@ updates:
       timezone: "Europe/Berlin"
     commit-message:
       prefix: "chore(deps)"
+    ignore:
+      # PostgreSQL major upgrades require pg_upgrade migration
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
 
   # Immich: server, ML, redis, postgres
   - package-ecosystem: "docker-compose"
@@ -75,3 +79,7 @@ updates:
       timezone: "Europe/Berlin"
     commit-message:
       prefix: "chore(deps)"
+    ignore:
+      # PostgreSQL major upgrades require pg_upgrade migration
+      - dependency-name: "postgres"
+        update-types: ["version-update:semver-major"]
