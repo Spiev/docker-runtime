@@ -25,7 +25,7 @@ services:
       - teslamate-db
 
   teslamate-db:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     container_name: teslamate-db
     restart: unless-stopped
     environment:
@@ -33,7 +33,7 @@ services:
       - POSTGRES_PASSWORD=${TM_DB_PASS}
       - POSTGRES_DB=${TM_DB_NAME}
     volumes:
-      - ./postgres:/var/lib/postgresql/data
+      - ./postgres:/var/lib/postgresql
 
   grafana:
     image: teslamate/grafana:2.2.0
