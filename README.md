@@ -365,6 +365,39 @@ sudo fail2ban-client unban <IP_ADDRESS>
 sudo fail2ban-client banned
 ```
 
+### Database Management
+
+**PostgreSQL Versions:**
+| Service | Version | Image |
+|---------|---------|-------|
+| Paperless | 18 | `postgres:18` |
+| Teslamate | 18 | `postgres:18-alpine` |
+| Immich | 14 | Custom with VectorChord |
+
+**PostgreSQL 18+ Volume Mount:**
+PostgreSQL 18 uses a version-specific data directory. Mount at `/var/lib/postgresql` (not `/data`):
+```yaml
+volumes:
+  - ./postgres:/var/lib/postgresql  # Creates 18/docker subdirectory
+```
+
+**Major Version Upgrade (e.g., 17 → 18):**
+```bash
+# 1. Backup
+docker exec -t <container> pg_dumpall -U <user> > backup.sql
+
+# 2. Stop and rename old data
+docker compose down
+mv ./postgres ./postgres_old
+
+# 3. Update docker-compose.yml, then start new DB
+docker compose up -d db && sleep 10
+
+# 4. Import and start all
+cat backup.sql | docker exec -i <container> psql -U <user>
+docker compose up -d
+```
+
 ## 🛠️ Customization
 
 ### Adapting for Your Environment
