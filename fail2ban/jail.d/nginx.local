@@ -1,0 +1,40 @@
+# ============================================================================
+# Fail2Ban Jails for Nginx Reverse Proxy
+# ============================================================================
+# Protects ALL services behind nginx (Immich, Paperless, FreshRSS, Home Assistant)
+# Uses shared nginx access.log - one ban blocks attacker from all services
+# ============================================================================
+
+[nginx-4xx]
+enabled = true
+# Ignore private networks
+ignoreip = 127.0.0.1/8 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
+# Nginx access log (shared by all services)
+logpath = /home/stefan/docker/proxy/nginx/logs/access.log
+# Filter for 401/403/404 responses
+filter = nginx-4xx
+# Ban duration: 24 hours
+bantime = 24h
+# Max failed attempts before ban
+maxretry = 3
+# Time window for counting failures (10 minutes)
+findtime = 600
+# Target DOCKER-USER chain (blocks traffic before Docker routing)
+chain = DOCKER-USER
+
+[nginx-malicious-uri]
+enabled = true
+# Ignore private networks
+ignoreip = 127.0.0.1/8 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
+# Nginx access log (shared by all services)
+logpath = /home/stefan/docker/proxy/nginx/logs/access.log
+# Filter for malicious URI patterns (wp-admin, .env, phpmyadmin, etc.)
+filter = nginx-malicious-uri
+# Ban duration: 24 hours
+bantime = 24h
+# Max attempts before ban (low threshold - these are clearly malicious)
+maxretry = 3
+# Time window for counting attempts (10 minutes)
+findtime = 600
+# Target DOCKER-USER chain (blocks traffic before Docker routing)
+chain = DOCKER-USER
