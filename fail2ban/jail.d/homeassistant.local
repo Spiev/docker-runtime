@@ -1,13 +1,11 @@
 # ============================================================================
-# Fail2Ban Jail for Home Assistant (DOMAIN4)
+# Fail2Ban Jail for Home Assistant Authentication
 # ============================================================================
-# Protects Home Assistant home automation hub from:
-# - Brute-force login attempts (monitored via HA's internal log)
-# - Rate limiting abuse (503 responses via nginx)
-# - Path scanning/reconnaissance (403/404 on suspicious paths via nginx)
+# Home Assistant returns HTTP 200 even for failed logins, so we cannot use
+# nginx access logs. Instead, we monitor HA's internal log file.
 #
-# NOTE: Home Assistant returns HTTP 200 even for failed logins, so we monitor
-# HA's own log file for authentication failures instead of nginx access logs.
+# Note: Rate limiting and scan protection are handled by nginx-4xx and
+# nginx-malicious-uri jails (via nginx access.log)
 # ============================================================================
 
 [homeassistant-auth]
@@ -20,34 +18,9 @@ logpath = /home/stefan/docker/homeassistant/homeassistant/config/home-assistant.
 filter = homeassistant-auth
 # Ban duration: 1 hour
 bantime = 3600
-# Max failed attempts before ban (set lower than HA's internal limit of 5)
-# This ensures fail2ban blocks at firewall BEFORE HA's app-level ban kicks in
+# Max failed attempts before ban (lower than HA's internal limit of 5)
 maxretry = 3
 # Time window for counting failures (10 minutes)
 findtime = 600
 # Target DOCKER-USER chain (blocks traffic before Docker routing)
-chain = DOCKER-USER
-
-[homeassistant-rate-limit]
-enabled = true
-ignoreip = 127.0.0.1/8 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
-logpath = /home/stefan/docker/proxy/nginx/logs/access.log
-filter = nginx-rate-limit-abuse
-# Ban for 30 minutes
-bantime = 1800
-# Moderate threshold (HA dashboards can generate many requests)
-maxretry = 30
-findtime = 300
-chain = DOCKER-USER
-
-[homeassistant-scan]
-enabled = true
-ignoreip = 127.0.0.1/8 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
-logpath = /home/stefan/docker/proxy/nginx/logs/access.log
-filter = nginx-forbidden-scan
-# Ban for 24 hours (reconnaissance is serious)
-bantime = 86400
-# Low threshold - scanners probe many paths
-maxretry = 10
-findtime = 600
 chain = DOCKER-USER
