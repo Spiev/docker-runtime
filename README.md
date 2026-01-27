@@ -21,7 +21,7 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 ### Home Automation
 - **Home Assistant** - Home automation hub
 - **Mosquitto** - MQTT broker for IoT devices
-- **Matter Hub** - Matter protocol bridge
+- **Matter Hub** - Matter protocol bridge ⚠️ *([Migration to Matterbridge planned](homeassistant/matter-migration.md) - upstream EOL)*
 - **Music Assistant** - Music aggregation service
 
 ### Media & Documents
