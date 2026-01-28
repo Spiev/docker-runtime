@@ -118,8 +118,9 @@ Ersetze in `docker-compose.yml` den `matter-hub` Service:
     restart: unless-stopped
     network_mode: host
     volumes:
-      - ./matterbridge:/root/.matterbridge
-      - ./matterbridge-data:/root/Matterbridge
+      - ./Matterbridge:/root/Matterbridge             # Mounts the Matterbridge plugin directory
+      - ./matterbridge-data:/root/.matterbridge       # Mounts the Matterbridge storage directory
+      - ./mattercert:/root/.mattercert                # Mounts the Matterbridge certificate directory
     environment:
       - TZ=Europe/Berlin
 ```
@@ -168,6 +169,8 @@ docker logs -f matterbridge
 | **filterByLabel** | Optional: Labels auswählen |
 | **whiteList** | Entities die exponiert werden sollen |
 | **blackList** | Entities die NICHT exponiert werden sollen |
+
+> **Hinweis:** Wenn dein Home Assistant über HTTPS/SSL erreichbar ist (z. B. via Reverse Proxy oder öffentlicher URL), verwende im Feld **host** statt `ws://` unbedingt `wss://`, damit die WebSocket‑Verbindung funktioniert und verschlüsselt ist.
 
 3. **Save** und **Restart Plugin**
 
