@@ -118,11 +118,6 @@ Ersetze in `docker-compose.yml` den `matter-hub` Service:
     restart: unless-stopped
     network_mode: host
     volumes:
-      - ./Matterbridge:/root/Matterbridge             # Mounts the Matterbridge plugin directory
-      - ./matterbridge-data:/root/.matterbridge       # Mounts the Matterbridge storage directory
-      - ./mattercert:/root/.mattercert                # Mounts the Matterbridge certificate directory
-    environment:
-      - TZ=Europe/Berlin
 ```
 
 ### 3.2 Verzeichnisse erstellen
