@@ -3,7 +3,7 @@
 > **Erstellt:** 2026-01-27  
 > **Grund:** `t0bst4r/home-assistant-matter-hub` ist seit Januar 2026 End of Maintenance  
 > **Ziel:** `Luligu/matterbridge` mit `matterbridge-hass` Plugin
-> **Update:** 2026-01-03, Die ursprüngliche matter-hub Lösung wird von RIDIX weiter maintained RiDDiX/home-assistant-matter-hub/, daher testen wir ersteinmal die Option
+> **Update:** 2026-01-03, die ursprüngliche matter-hub Lösung wird von RIDIX im Repository `RiDDiX/home-assistant-matter-hub` weiter maintained; daher testen wir zunächst diese Option
 
 ## Übersicht
 
