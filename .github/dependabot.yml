@@ -14,8 +14,7 @@ updates:
   - package-ecosystem: "docker-compose"
     directory: "/homeassistant"
     schedule:
-      interval: "weekly"
-      day: "sunday"
+      interval: "daily"
       time: "03:00"
       timezone: "Europe/Berlin"
     commit-message:
@@ -25,8 +24,7 @@ updates:
   - package-ecosystem: "docker-compose"
     directory: "/paperless"
     schedule:
-      interval: "weekly"
-      day: "sunday"
+      interval: "daily"
       time: "03:00"
       timezone: "Europe/Berlin"
     commit-message:
@@ -36,8 +34,7 @@ updates:
   - package-ecosystem: "docker-compose"
     directory: "/immich"
     schedule:
-      interval: "weekly"
-      day: "sunday"
+      interval: "daily"
       time: "03:00"
       timezone: "Europe/Berlin"
     commit-message:
@@ -52,8 +49,7 @@ updates:
   - package-ecosystem: "docker-compose"
     directory: "/pihole"
     schedule:
-      interval: "weekly"
-      day: "sunday"
+      interval: "daily"
       time: "03:00"
       timezone: "Europe/Berlin"
     commit-message:
@@ -63,8 +59,7 @@ updates:
   - package-ecosystem: "docker-compose"
     directory: "/freshrss"
     schedule:
-      interval: "weekly"
-      day: "sunday"
+      interval: "daily"
       time: "03:00"
       timezone: "Europe/Berlin"
     commit-message:
@@ -74,8 +69,7 @@ updates:
   - package-ecosystem: "docker-compose"
     directory: "/teslamate"
     schedule:
-      interval: "weekly"
-      day: "sunday"
+      interval: "daily"
       time: "03:00"
       timezone: "Europe/Berlin"
     commit-message:

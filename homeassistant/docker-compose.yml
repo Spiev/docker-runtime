@@ -24,7 +24,7 @@ services:
       - 1883:1883
       - 9001:9001
   matter-hub:
-    image: ghcr.io/t0bst4r/home-assistant-matter-hub:3.0.3
+    image: ghcr.io/riddix/home-assistant-matter-hub:1.10.10
     container_name: matter-hub
     restart: unless-stopped
     network_mode: host
@@ -34,7 +34,7 @@ services:
     volumes:
       - $PWD/home-assistant-matter-hub:/data
   music-assistant:
-    image: ghcr.io/music-assistant/server:2.7.5
+    image: ghcr.io/music-assistant/server:2.7.6
     container_name: musicassistant
     restart: unless-stopped
     # Network mode must be set to host for MA to work correctly
