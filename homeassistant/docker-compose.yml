@@ -1,7 +1,7 @@
 services:
   homeassistant:
     container_name: homeassistant
-    image: homeassistant/home-assistant:2026.2.0
+    image: homeassistant/home-assistant:2026.2.1
     devices:
       - /dev/ttyACM0 # mappes zigbee Dongel to container
     network_mode: "host"
@@ -24,7 +24,7 @@ services:
       - 1883:1883
       - 9001:9001
   matter-hub:
-    image: ghcr.io/riddix/home-assistant-matter-hub:1.10.10
+    image: ghcr.io/riddix/home-assistant-matter-hub:2.0.9
     container_name: matter-hub
     restart: unless-stopped
     network_mode: host
