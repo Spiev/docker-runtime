@@ -1,6 +1,9 @@
 version: 2
+# All services check daily at 03:00 Europe/Berlin.
+# Minor/patch updates are auto-merged via dependabot-auto-merge.yml.
+# Nginx is auto-deployed via scripts/nginx_update.sh; other services require manual deployment.
 updates:
-  # Proxy: nginx, certbot (daily - internet-facing, first line of defense)
+  # Proxy: nginx, certbot (internet-facing, first line of defense)
   - package-ecosystem: "docker-compose"
     directory: "/proxy"
     schedule:
