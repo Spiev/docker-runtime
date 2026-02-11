@@ -106,7 +106,7 @@ def review_with_claude(pr_data):
     prompt = build_review_prompt(pr_data)
     
     message = client.messages.create(
-        model="claude-opus-4-5-20251101",
+        model="claude-sonnet-4-5-20250929",
         max_tokens=1500,
         messages=[
             {"role": "user", "content": prompt}
