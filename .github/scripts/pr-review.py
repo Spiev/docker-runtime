@@ -8,7 +8,7 @@ import os
 import json
 import sys
 from anthropic import Anthropic
-from github import Github
+from github import Github, Auth
 
 def get_pr_details():
     """Get PR details from GitHub API"""
@@ -16,8 +16,8 @@ def get_pr_details():
     owner = os.getenv('REPO_OWNER')
     repo = os.getenv('REPO_NAME')
     pr_number = int(os.getenv('PR_NUMBER'))
-    
-    g = Github(token)
+
+    g = Github(auth=Auth.Token(token))
     repository = g.get_repo(f"{owner}/{repo}")
     pr = repository.get_pull(pr_number)
     
