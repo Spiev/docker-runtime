@@ -74,3 +74,13 @@ updates:
       timezone: "Europe/Berlin"
     commit-message:
       prefix: "chore(deps)"
+
+  # GitHub Actions: keep pinned SHAs up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "03:00"
+      timezone: "Europe/Berlin"
+    commit-message:
+      prefix: "chore(deps)"
