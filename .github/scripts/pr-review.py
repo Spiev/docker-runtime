@@ -47,72 +47,79 @@ def get_pr_diff(pr):
         'commits': pr.get_commits().totalCount
     }
 
+def build_system_prompt():
+    """Build the system prompt for concise reviews"""
+    return (
+        "You are a concise code reviewer. "
+        "Use short bullet points. No filler, no praise, no pleasantries. "
+        "Only mention issues or noteworthy changes. "
+        "If everything looks fine, say so in one line."
+    )
+
 def build_review_prompt(pr_data):
     """Build the Claude prompt for code review"""
     is_dependabot = pr_data['is_dependabot']
-    
+
     if is_dependabot:
-        prompt = f"""Review this Dependabot PR and provide a BRIEF summary:
+        prompt = f"""Dependabot PR:
 
-PR Title: {pr_data['title']}
-Files changed: {len(pr_data['files'])}
-
+Title: {pr_data['title']}
 Files:
 """
         for file in pr_data['files']:
-            prompt += f"\n- {file['filename']} ({file['status']}, +{file['additions']}/-{file['deletions']} lines)"
-        
+            prompt += f"- {file['filename']} (+{file['additions']}/-{file['deletions']})\n"
+
         prompt += """
+Reply with ONLY this format (no other text):
 
-Provide a SHORT summary with:
-1. **Type**: Functional update / Security patch / Bug fix / Minor version / Major version
-2. **Risk Level**: Low / Medium / High
-3. **Key Changes**: Brief bullet points (max 3)
-4. **Action Required**: Yes/No - any manual testing needed?
-
-Keep it concise - this is a Dependabot update."""
+| | |
+|---|---|
+| **Type** | Minor/Patch/Major/Security |
+| **Risk** | Low/Medium/High |
+| **Change** | One sentence |
+| **Security** | None / CVE fixed: ... / Security-relevant because ... |
+| **Action** | None / Manual testing needed because ... |"""
     else:
-        prompt = f"""Perform a detailed code review for this PR:
+        prompt = f"""Review this PR. Be brief - bullet points only.
 
-PR Title: {pr_data['title']}
+Title: {pr_data['title']}
 Description: {pr_data['body']}
 Author: {pr_data['author']}
-Files changed: {len(pr_data['files'])}
 
-Changed files:
+Changes:
 """
         for file in pr_data['files']:
-            prompt += f"\n\n## File: {file['filename']} ({file['status']})\n"
+            prompt += f"\n### {file['filename']} ({file['status']})\n"
             if file['patch']:
                 prompt += f"```diff\n{file['patch'][:2000]}\n```"
-        
+
         prompt += """
 
-Provide a detailed review covering:
-1. **DRY Principle**: Are there any code duplications that could be refactored?
-2. **Best Practices**: Shell scripts, Docker configs, Python code - any issues?
-3. **Security**: Any security concerns or hardening opportunities?
-4. **Maintainability**: Is the code clear and maintainable? Any suggestions?
-5. **Architecture**: Does this follow the project's patterns?
-6. **Suggestions**: Any concrete improvements with code examples?
+Reply with:
+- **Summary**: 1-2 sentences max
+- **Security**: Flag any security issues (exposed secrets, injection, misconfigs, insecure defaults). ALWAYS include this section - either list issues or say "No issues".
+- **Issues**: List only actual problems (bugs, correctness). Skip if none.
+- **Suggestions**: Max 3 concrete improvements. Include code snippets only if helpful. Skip if none.
 
-Be constructive and specific with your feedback."""
-    
+Do NOT list categories with "no issues found" - except Security, which must always be present."""
+
     return prompt
 
 def review_with_claude(pr_data):
     """Send PR to Claude for review"""
     client = Anthropic()
     prompt = build_review_prompt(pr_data)
-    
+    max_tokens = 300 if pr_data['is_dependabot'] else 800
+
     message = client.messages.create(
         model="claude-sonnet-4-5-20250929",
-        max_tokens=1500,
+        max_tokens=max_tokens,
+        system=build_system_prompt(),
         messages=[
             {"role": "user", "content": prompt}
         ]
     )
-    
+
     return message.content[0].text
 
 def format_github_comment(review, pr_data):
