@@ -24,8 +24,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: |
-          pip install anthropic PyGithub
+        run: pip install anthropic PyGithub
 
       - name: Run Claude PR Review
         env:
