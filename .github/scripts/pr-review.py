@@ -64,6 +64,10 @@ def build_review_prompt(pr_data):
         prompt = f"""Dependabot PR:
 
 Title: {pr_data['title']}
+
+Release Notes:
+{pr_data['body'][:3000]}
+
 Files:
 """
         for file in pr_data['files']:
@@ -77,8 +81,10 @@ Reply with ONLY this format (no other text):
 | **Type** | Minor/Patch/Major/Security |
 | **Risk** | Low/Medium/High |
 | **Change** | One sentence |
-| **Security** | None / CVE fixed: ... / Security-relevant because ... |
-| **Action** | None / Manual testing needed because ... |"""
+| **Security** | None / CVE/GHSA fixed: ... / Security-relevant because ... |
+| **Action** | None / Manual testing needed because ... |
+
+IMPORTANT: Carefully check the release notes for security advisories (GHSA, CVE), security fixes, or breaking changes. If present, reflect them in Type, Risk, Security, and Action."""
     else:
         prompt = f"""Review this PR. Be brief - bullet points only.
 
@@ -109,7 +115,7 @@ def review_with_claude(pr_data):
     """Send PR to Claude for review"""
     client = Anthropic()
     prompt = build_review_prompt(pr_data)
-    max_tokens = 300 if pr_data['is_dependabot'] else 800
+    max_tokens = 500 if pr_data['is_dependabot'] else 800
 
     message = client.messages.create(
         model="claude-sonnet-4-5-20250929",
