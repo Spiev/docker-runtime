@@ -1,6 +1,6 @@
 services:
   teslamate:
-    image: teslamate/teslamate:2.2.0
+    image: teslamate/teslamate:3.0.0
     container_name: teslamate
     restart: unless-stopped
     env_file:
