@@ -28,11 +28,21 @@ This directory contains fail2ban configuration files for protecting Nginx-proxie
 - Access denied (403 Forbidden)
 - Path probing (404 Not Found)
 
+> **Note:** `/api/ios/config` is explicitly ignored (always returns 404, see
+> nginx-malicious-uri note above).
+
 **nginx-malicious-uri** catches attackers probing for:
 - WordPress: `wp-admin`, `wp-login`, `xmlrpc.php`
 - Database tools: `phpmyadmin`, `mysql`, `adminer`
 - Config exposure: `.env`, `.git`, `config`, `backup`
 - Backdoors: `shell`, `setup`, `install`
+
+> **Note:** `/api/ios/` paths are explicitly ignored. The HA iOS companion app
+> requests `/api/ios/config` on every reconnect (always returns 404 – the endpoint
+> is not implemented server-side). Since HA iOS 2026.2.1 introduced auto-refresh
+> every 5 minutes, this path is requested frequently enough to trigger `maxretry=3`
+> and ban the phone's mobile IP. The keyword `config` in the URI would otherwise
+> match the malicious-uri filter.
 
 **homeassistant-auth** is special:
 - Home Assistant returns HTTP 200 even for failed logins
