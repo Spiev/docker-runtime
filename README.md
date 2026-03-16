@@ -361,6 +361,13 @@ For Renovate PRs, the script fetches release notes directly from the upstream Gi
 
 Required GitHub secrets: `CLAUDE_API_KEY` (Anthropic API key), `GITHUB_TOKEN` (auto-provided), `RENOVATE_APP_ID` + `RENOVATE_APP_PRIVATE_KEY` (GitHub App for Renovate).
 
+**GitHub App permissions** (Repository):
+- Contents: Read & Write
+- Pull requests: Read & Write
+- Workflows: Read & Write
+- Metadata: Read (required)
+- Dependabot alerts: Read (enables vulnerability-aware PRs; listed as "Dependabot alerts" in the GitHub App UI, not "Vulnerability alerts")
+
 **Other Services (manual deployment):**
 1. Renovate creates PRs when new versions are available
 2. Review Claude summary and linked release notes, then merge PR
