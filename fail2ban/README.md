@@ -227,4 +227,3 @@ Consider migrating to [CrowdSec](https://www.crowdsec.net/) for:
 - Modern YAML scenarios instead of regex
 - Community-maintained detection rules
 
-See `CLAUDE.md` → Future Enhancements for migration plan.
