@@ -30,6 +30,7 @@ services:
       DOMAIN3: ${DOMAIN3}
       DOMAIN4: ${DOMAIN4}
       BACKEND_IP: ${BACKEND_IP}
+      DOMAIN3_BACKEND_IP: ${DOMAIN3_BACKEND_IP}
     depends_on:
       certbot-init:
         condition: service_completed_successfully
