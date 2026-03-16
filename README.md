@@ -362,11 +362,19 @@ For Renovate PRs, the script fetches release notes directly from the upstream Gi
 Required GitHub secrets: `CLAUDE_API_KEY` (Anthropic API key), `GITHUB_TOKEN` (auto-provided), `RENOVATE_APP_ID` + `RENOVATE_APP_PRIVATE_KEY` (GitHub App for Renovate).
 
 **GitHub App permissions** (Repository):
+- Checks: Read & Write
+- Commit statuses: Read & Write
 - Contents: Read & Write
 - Pull requests: Read & Write
 - Workflows: Read & Write
+- Administration: Read
 - Metadata: Read (required)
-- Dependabot alerts: Read (enables vulnerability-aware PRs; listed as "Dependabot alerts" in the GitHub App UI, not "Vulnerability alerts")
+- Dependabot alerts: Read (listed as "Dependabot alerts" in the UI, not "Vulnerability alerts")
+
+**GitHub App permissions** (Organization):
+- Members: Read
+
+> Note: After adding new permissions to a GitHub App, the installation must be re-approved before they take effect: GitHub → Settings → Applications → your app → "Review and accept new permissions"
 
 **Other Services (manual deployment):**
 1. Renovate creates PRs when new versions are available
