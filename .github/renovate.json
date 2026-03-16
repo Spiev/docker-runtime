@@ -3,7 +3,7 @@
   "extends": ["config:recommended"],
   "dependencyDashboard": false,
   "timezone": "Europe/Berlin",
-  "schedule": ["after 3am and before 4am"],
+  "schedule": ["at any time"],
   "packageRules": [
     {
       "description": "Auto-merge minor and patch updates",
