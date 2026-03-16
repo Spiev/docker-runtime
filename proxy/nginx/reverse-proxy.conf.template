@@ -68,7 +68,7 @@ upstream paperless_backend {
 }
 
 upstream freshrss_backend {
-    server ${BACKEND_IP}:8080;
+    server ${DOMAIN3_BACKEND_IP};
 }
 
 upstream homeassistant_backend {
