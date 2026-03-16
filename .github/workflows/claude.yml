@@ -9,7 +9,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  id-token: write  # ← das fehlt
+  id-token: write
 
 jobs:
   claude:
