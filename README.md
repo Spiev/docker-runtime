@@ -6,7 +6,7 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 
 - **Production-tested** configurations for Raspberry Pi
 - **Security-hardened** with fail2ban, rate limiting, and SSL
-- **Automated dependency updates** via GitHub Dependabot
+- **Automated dependency updates** via Renovate
 - **MQTT-based monitoring** integration with Home Assistant
 - **Automated backups** with Restic
 - **Template-based setup** - easy to customize for your environment
@@ -21,7 +21,7 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 ### Home Automation
 - **Home Assistant** - Home automation hub
 - **Mosquitto** - MQTT broker for IoT devices
-- **Matter Hub** - Matter protocol bridge ⚠️ *([Migration to Matterbridge planned](./homeassistant/matter-migration.md) - upstream EOL)*
+- **Matter Hub** - Matter protocol bridge
 - **Music Assistant** - Music aggregation service
 
 ### Media & Documents
@@ -114,10 +114,10 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 
 ```
 ├── .github/
-│   ├── dependabot.yml              # Automated Docker image updates
+│   ├── renovate.json               # Automated Docker image updates
 │   ├── workflows/
 │   │   ├── claude-pr-review.yml    # Automated Claude AI review for every PR
-│   │   └── dependabot-auto-merge.yml
+│   │   └── renovate.yml            # Runs Renovate via GitHub Actions (every 6h)
 │   └── scripts/
 │       └── pr-review.py            # Claude review logic (fetches upstream release notes)
 ├── proxy/              # Nginx reverse proxy + Let's Encrypt
@@ -330,14 +330,14 @@ docker exec proxy-nginx-1 ls -la /etc/letsencrypt/live/
 
 ### Service Updates
 
-All Docker images are pinned to specific versions and managed via **GitHub Dependabot**:
+All Docker images are pinned to specific versions and managed via **Renovate** (runs via GitHub Actions every 6 hours):
 
-- **Proxy (nginx, certbot)**: Checked **daily** (internet-facing, security-critical)
-- **All other services**: Checked **weekly** on Sundays
+- **Proxy (nginx, certbot)**: Checked on **every run** (internet-facing, security-critical)
+- **All other services**: Checked **daily** in the 03:00 window
 
 **Nginx Auto-Update Workflow:**
 ```
-1. Dependabot creates PR for new nginx version (daily at 03:00)
+1. Renovate creates PR for new nginx version
 2. GitHub Action auto-merges minor/patch updates
 3. nginx_update.sh (via cron) pulls changes and redeploys
 4. Status sent to Home Assistant via MQTT
@@ -351,18 +351,18 @@ crontab -e
 
 **Automated Claude PR Review:**
 
-Every PR (including all Dependabot PRs) is automatically reviewed by Claude AI via `.github/workflows/claude-pr-review.yml`. The review is posted as a PR comment and includes:
+Every PR (including all Renovate PRs) is automatically reviewed by Claude AI via `.github/workflows/claude-pr-review.yml`. The review is posted as a PR comment and includes:
 
 - **Type** (Patch/Minor/Major/Security), **Risk**, and a one-line **Change** summary
 - **Security** — flags CVEs, GHSA advisories, or security-relevant changes
 - **Action** — flags if manual testing is required
 
-For Dependabot PRs, the script fetches release notes directly from the upstream GitHub repository (not just the Dependabot PR body) and links to each individual release for quick navigation. Repos without GitHub releases fall back to the Dependabot PR body.
+For Renovate PRs, the script fetches release notes directly from the upstream GitHub repository and links to each individual release for quick navigation. Repos without GitHub releases fall back to the Renovate PR body.
 
-Required GitHub secrets: `CLAUDE_API_KEY` (Anthropic API key), `GITHUB_TOKEN` (auto-provided).
+Required GitHub secrets: `CLAUDE_API_KEY` (Anthropic API key), `GITHUB_TOKEN` (auto-provided), `RENOVATE_APP_ID` + `RENOVATE_APP_PRIVATE_KEY` (GitHub App for Renovate).
 
 **Other Services (manual deployment):**
-1. Dependabot creates PRs when new versions are available
+1. Renovate creates PRs when new versions are available
 2. Review Claude summary and linked release notes, then merge PR
 3. Deploy update:
 ```bash
