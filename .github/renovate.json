@@ -2,8 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "timezone": "Europe/Berlin",
-  "schedule": ["on saturday and sunday"],
-  "commitMessagePrefix": "chore(deps):",
+  "schedule": ["after 3am and before 4am"],
   "packageRules": [
     {
       "description": "Auto-merge minor and patch updates",
@@ -15,6 +14,11 @@
       "description": "Major updates require manual review",
       "matchUpdateTypes": ["major"],
       "automerge": false
+    },
+    {
+      "description": "Proxy (nginx, certbot) is the first line of defense — check on every workflow run (every 6 hours)",
+      "matchFileNames": ["proxy/docker-compose.yml"],
+      "schedule": ["at any time"]
     },
     {
       "description": "Immich uses custom postgres image with VectorChord extension — wait for official Immich support before upgrading major versions",
