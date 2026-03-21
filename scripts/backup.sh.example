@@ -77,10 +77,11 @@ if [[ -z "${RESTIC_REPO:-}" ]]; then
     exit 1
 fi
 
-# Save S3 credentials and immediately unset RESTIC_REPOSITORY2 / RESTIC_PASSWORD2.
-# Restic auto-detects these env vars as --repo2, which conflicts with --from-repo.
 S3_REPO="${RESTIC_REPOSITORY_S3:-}"
 S3_PASSWORD="${RESTIC_PASSWORD_S3:-}"
+# Defensive unset: restic auto-detects RESTIC_REPOSITORY2 as --repo2, which
+# conflicts with --from-repo. Unset to guard against old .restic.env files.
+unset RESTIC_REPOSITORY2 RESTIC_PASSWORD2
 
 # Check if S3 offsite backup is fully configured
 S3_ENABLED=false
