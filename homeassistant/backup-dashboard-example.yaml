@@ -1,0 +1,103 @@
+# =============================================================================
+# Restic Backup Dashboard für Home Assistant
+# =============================================================================
+# So fügst Du das Dashboard hinzu:
+#
+# Option A: Über die UI
+#   1. Einstellungen → Dashboards → Dashboard hinzufügen
+#   2. Neues Dashboard erstellen
+#   3. Rechts oben: 3 Punkte → Raw-Konfigurationseditor
+#   4. Den Inhalt ab "views:" unten einfügen
+#
+# Option B: Als View in bestehendes Dashboard
+#   1. Bestehendes Dashboard öffnen → Bearbeiten
+#   2. View hinzufügen → Raw-Konfigurationseditor
+#   3. Inhalt ab "title: Backup" einfügen
+#
+# Voraussetzung: Das backup.sh.example Script läuft und sendet MQTT-Daten.
+# Die Entity sensor.restic_backup_status wird automatisch via MQTT Discovery
+# erstellt — kein manueller Eintrag in mqtt.yaml nötig.
+# =============================================================================
+
+views:
+  - title: Backup
+    path: backup
+    icon: mdi:backup-restore
+    cards:
+      # -----------------------------------------------------------------
+      # Zeile 1: Status-Übersicht
+      # -----------------------------------------------------------------
+      - type: vertical-stack
+        cards:
+          # Hauptstatus
+          - type: entity
+            entity: sensor.restic_backup_status
+            name: Backup Status
+            icon: mdi:backup-restore
+            state_color: true
+
+          # Schnellübersicht: Letzter Lauf + Dauer
+          - type: glance
+            title: Letzter Backup
+            show_name: true
+            show_icon: true
+            entities:
+              - entity: sensor.restic_backup_status
+                name: Letzter Lauf
+                attribute: last_run
+                format: relative
+              - entity: sensor.restic_backup_status
+                name: Dauer (s)
+                attribute: duration_seconds
+                icon: mdi:timer-outline
+              - entity: sensor.restic_backup_status
+                name: S3 Status
+                attribute: s3_status
+                icon: mdi:cloud-check-outline
+
+      # -----------------------------------------------------------------
+      # Zeile 2: Repository-Statistiken
+      # -----------------------------------------------------------------
+      - type: glance
+        title: Repository
+        show_name: true
+        show_icon: true
+        entities:
+          - entity: sensor.restic_backup_status
+            name: Größe (GB)
+            attribute: repository_size_gb
+            icon: mdi:database
+          - entity: sensor.restic_backup_status
+            name: Snapshots
+            attribute: snapshot_count
+            icon: mdi:camera
+          - entity: sensor.restic_backup_status
+            name: Neue Dateien
+            attribute: files_new
+            icon: mdi:file-plus-outline
+          - entity: sensor.restic_backup_status
+            name: Geändert
+            attribute: files_changed
+            icon: mdi:file-edit-outline
+
+      # -----------------------------------------------------------------
+      # Zeile 3: Details pro Service
+      # -----------------------------------------------------------------
+      - type: markdown
+        title: Details pro Service
+        content: >
+          | Service | Neue Dateien | Geändert |
+          |---------|-------------|----------|
+          | Immich | {{ state_attr('sensor.restic_backup_status', 'immich_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'immich_files_changed') }} |
+          | Paperless | {{ state_attr('sensor.restic_backup_status', 'paperless_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'paperless_files_changed') }} |
+          | Home Assistant | {{ state_attr('sensor.restic_backup_status', 'homeassistant_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'homeassistant_files_changed') }} |
+          | Teslamate | {{ state_attr('sensor.restic_backup_status', 'teslamate_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'teslamate_files_changed') }} |
+
+      # -----------------------------------------------------------------
+      # Zeile 4: Verlauf / Logbuch
+      # -----------------------------------------------------------------
+      - type: logbook
+        title: Backup-Verlauf
+        entities:
+          - sensor.restic_backup_status
+        hours_to_show: 168  # 7 Tage
