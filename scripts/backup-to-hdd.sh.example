@@ -79,9 +79,8 @@ fi
 
 # Save S3 credentials and immediately unset RESTIC_REPOSITORY2 / RESTIC_PASSWORD2.
 # Restic auto-detects these env vars as --repo2, which conflicts with --from-repo.
-S3_REPO="${RESTIC_REPOSITORY2:-}"
-S3_PASSWORD="${RESTIC_PASSWORD2:-}"
-unset RESTIC_REPOSITORY2 RESTIC_PASSWORD2
+S3_REPO="${RESTIC_REPOSITORY_S3:-}"
+S3_PASSWORD="${RESTIC_PASSWORD_S3:-}"
 
 # Check if S3 offsite backup is fully configured
 S3_ENABLED=false
@@ -361,7 +360,7 @@ echo "Total snapshots: $SNAPSHOT_COUNT"
 #
 # IMPORTANT: The S3 repo must be initialized once before first use:
 #   source scripts/.restic.env
-#   RESTIC_PASSWORD="$RESTIC_PASSWORD2" restic -r "$RESTIC_REPOSITORY2" init
+#   RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPOSITORY_S3" init
 
 if [[ "$S3_ENABLED" == "true" ]]; then
     echo ""
