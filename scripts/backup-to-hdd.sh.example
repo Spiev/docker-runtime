@@ -364,9 +364,13 @@ if [[ "$S3_ENABLED" == "true" ]]; then
 
     if restic -r "$RESTIC_REPO" copy --repo2 "$S3_REPO" --verbose 2>&1; then
         echo "S3 copy complete. Applying retention policy (weekly: $S3_KEEP_WEEKLY, monthly: $S3_KEEP_MONTHLY)..."
-        restic -r "$S3_REPO" forget --keep-weekly "$S3_KEEP_WEEKLY" --keep-monthly "$S3_KEEP_MONTHLY" --prune
-        echo "S3 offsite copy and pruning complete."
-        S3_STATUS="success"
+        if restic -r "$S3_REPO" forget --keep-weekly "$S3_KEEP_WEEKLY" --keep-monthly "$S3_KEEP_MONTHLY" --prune; then
+            echo "S3 offsite copy and pruning complete."
+            S3_STATUS="success"
+        else
+            S3_STATUS="prune_failed"
+            echo "WARNING: S3 copy succeeded but pruning failed — local backup still succeeded"
+        fi
     else
         S3_STATUS="failed"
         echo "WARNING: S3 offsite copy failed — local backup still succeeded"
