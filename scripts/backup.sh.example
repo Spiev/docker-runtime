@@ -9,27 +9,16 @@ echo "Backup script started at $(date --iso-8601=ns)"
 # ============================================================================
 
 SCRIPT_DIR="$(dirname "$0")"
-RESTIC_REPO="/mnt/sda1/restic-repo"
-HDD_DEVICE="/dev/sda1"
-HDD_MOUNT="/mnt/sda1"
-# Adjust this path to your Docker directory
-DOCKER_BASE="${DOCKER_BASE:-$HOME/docker}"
 
-# S3 offsite repo config (credentials come from .restic.env — see .restic.env.example)
-S3_REPO="${RESTIC_REPOSITORY2:-}"
-S3_KEEP_WEEKLY=4    # keep 4 weekly snapshots offsite
-S3_KEEP_MONTHLY=12  # keep 12 monthly snapshots offsite
-
-# MQTT Topics
-MQTT_HOST="localhost"
-MQTT_PORT="1883"
+# MQTT Topics (static — no need to customize per environment)
 STATE_TOPIC="homeassistant/sensor/backup_status/state"
 ATTRIBUTES_TOPIC="homeassistant/sensor/backup_status/attributes"
 DISCOVERY_TOPIC="homeassistant/sensor/backup_status/config"
-
-# Device info for Home Assistant
 DEVICE_ID="restic_backup"
 DEVICE_NAME="Restic Backup"
+
+# All other config (HDD_DEVICE, HDD_MOUNT, DOCKER_BASE, MQTT_HOST, MQTT_PORT,
+# RESTIC_REPO, RESTIC_PASSWORD, S3_* ) comes from .restic.env — see .restic.env.example
 
 # ============================================================================
 # Load Credentials
@@ -74,17 +63,25 @@ fi
 source "$RESTIC_ENV"
 
 # Validate required variables are set
-if [[ -z "${RESTIC_PASSWORD:-}" ]]; then
-    echo "ERROR: RESTIC_PASSWORD is not set in $RESTIC_ENV" >&2
-    exit 1
-fi
+for VAR in RESTIC_PASSWORD RESTIC_REPO HDD_DEVICE HDD_MOUNT DOCKER_BASE MQTT_HOST MQTT_PORT; do
+    if [[ -z "${!VAR:-}" ]]; then
+        echo "ERROR: $VAR is not set in $RESTIC_ENV" >&2
+        exit 1
+    fi
+done
+
+S3_REPO="${RESTIC_REPOSITORY_S3:-}"
+S3_PASSWORD="${RESTIC_PASSWORD_S3:-}"
+# Defensive unset: restic auto-detects RESTIC_REPOSITORY2 as --repo2, which
+# conflicts with --from-repo. Unset to guard against old .restic.env files.
+unset RESTIC_REPOSITORY2 RESTIC_PASSWORD2
 
 # Check if S3 offsite backup is fully configured
 S3_ENABLED=false
-if [[ -n "${RESTIC_REPOSITORY2:-}" ]] && [[ -n "${AWS_ACCESS_KEY_ID:-}" ]] && \
-   [[ -n "${AWS_SECRET_ACCESS_KEY:-}" ]] && [[ -n "${RESTIC_PASSWORD2:-}" ]]; then
+if [[ -n "$S3_REPO" ]] && [[ -n "${AWS_ACCESS_KEY_ID:-}" ]] && \
+   [[ -n "${AWS_SECRET_ACCESS_KEY:-}" ]] && [[ -n "$S3_PASSWORD" ]]; then
     S3_ENABLED=true
-    echo "S3 offsite backup enabled: $RESTIC_REPOSITORY2"
+    echo "S3 offsite backup enabled: $S3_REPO"
 else
     echo "S3 offsite backup not configured (optional) — skipping"
 fi
@@ -354,6 +351,10 @@ echo "Total snapshots: $SNAPSHOT_COUNT"
 # Uses `restic copy` which only transfers snapshots not yet in the S3 repo —
 # Restic deduplication keeps this efficient even for large Immich libraries.
 # Retention on S3 is sparser than local: weekly/monthly snapshots for DR only.
+#
+# IMPORTANT: The S3 repo must be initialized once before first use:
+#   source scripts/.restic.env
+#   RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPOSITORY_S3" init
 
 if [[ "$S3_ENABLED" == "true" ]]; then
     echo ""
@@ -362,9 +363,15 @@ if [[ "$S3_ENABLED" == "true" ]]; then
     echo "=========================================="
     send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Copying to S3...\"}"
 
-    if restic -r "$RESTIC_REPO" copy --repo2 "$S3_REPO" --verbose 2>&1; then
+    S3_KEEP_WEEKLY="${S3_KEEP_WEEKLY:-4}"
+    S3_KEEP_MONTHLY="${S3_KEEP_MONTHLY:-12}"
+
+    # RESTIC_FROM_PASSWORD = source (local HDD), RESTIC_PASSWORD = destination (S3)
+    if RESTIC_FROM_PASSWORD="$RESTIC_PASSWORD" RESTIC_PASSWORD="$S3_PASSWORD" \
+       restic -r "$S3_REPO" copy --from-repo "$RESTIC_REPO" --verbose 2>&1; then
         echo "S3 copy complete. Applying retention policy (weekly: $S3_KEEP_WEEKLY, monthly: $S3_KEEP_MONTHLY)..."
-        if restic -r "$S3_REPO" forget --keep-weekly "$S3_KEEP_WEEKLY" --keep-monthly "$S3_KEEP_MONTHLY" --prune; then
+        if RESTIC_PASSWORD="$S3_PASSWORD" \
+           restic -r "$S3_REPO" forget --keep-weekly "$S3_KEEP_WEEKLY" --keep-monthly "$S3_KEEP_MONTHLY" --prune; then
             echo "S3 offsite copy and pruning complete."
             S3_STATUS="success"
         else
