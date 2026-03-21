@@ -13,7 +13,7 @@ CLAUDE.md
 
 # Production scripts (contain environment-specific paths and container names)
 # Only .example files are tracked - copy .example to production and adjust for your setup
-scripts/backup-to-hdd.sh
+scripts/backup.sh
 scripts/nginx_update.sh
 scripts/nginx_check.sh
 scripts/check_raspi_update.sh
