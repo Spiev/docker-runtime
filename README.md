@@ -168,6 +168,33 @@ Monitoring scripts send status updates to Home Assistant via MQTT:
 - **Backup Status** - Real-time backup progress and statistics
 - **System Updates** - Raspberry Pi package and firmware status
 
+### Mosquitto: MQTT User verwalten
+
+Mosquitto läuft als Container in `homeassistant/docker-compose.yml`. Die Passwort-Datei liegt im Container unter `/mosquitto/config/pwfile`.
+
+```bash
+# Neuen User anlegen (-it für interaktive Passwort-Eingabe erforderlich)
+docker exec -it mosquitto mosquitto_passwd /mosquitto/config/pwfile <username>
+
+# User löschen
+docker exec mosquitto mosquitto_passwd -D /mosquitto/config/pwfile <username>
+
+# Passwort eines bestehenden Users ändern
+docker exec -it mosquitto mosquitto_passwd /mosquitto/config/pwfile <username>
+
+# Mosquitto neu laden (kein Neustart nötig)
+docker exec mosquitto kill -HUP 1
+```
+
+> Änderungen an der Passwort-Datei werden erst nach dem Reload wirksam.
+
+**Ownership-Warnung:** Falls beim Ausführen eine Warnung erscheint (`File owner is not root`), einmalig beheben:
+```bash
+docker exec mosquitto chown root /mosquitto/config/pwfile
+```
+
+---
+
 ### Home Assistant Sensors
 
 Scripts automatically create MQTT Discovery sensors:
