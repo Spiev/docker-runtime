@@ -15,6 +15,11 @@ HDD_MOUNT="/mnt/sda1"
 # Adjust this path to your Docker directory
 DOCKER_BASE="${DOCKER_BASE:-$HOME/docker}"
 
+# S3 offsite repo config (credentials come from .restic.env — see .restic.env.example)
+S3_REPO="${RESTIC_REPOSITORY2:-}"
+S3_KEEP_WEEKLY=4    # keep 4 weekly snapshots offsite
+S3_KEEP_MONTHLY=12  # keep 12 monthly snapshots offsite
+
 # MQTT Topics
 MQTT_HOST="localhost"
 MQTT_PORT="1883"
@@ -72,6 +77,16 @@ source "$RESTIC_ENV"
 if [[ -z "${RESTIC_PASSWORD:-}" ]]; then
     echo "ERROR: RESTIC_PASSWORD is not set in $RESTIC_ENV" >&2
     exit 1
+fi
+
+# Check if S3 offsite backup is fully configured
+S3_ENABLED=false
+if [[ -n "${RESTIC_REPOSITORY2:-}" ]] && [[ -n "${AWS_ACCESS_KEY_ID:-}" ]] && \
+   [[ -n "${AWS_SECRET_ACCESS_KEY:-}" ]] && [[ -n "${RESTIC_PASSWORD2:-}" ]]; then
+    S3_ENABLED=true
+    echo "S3 offsite backup enabled: $RESTIC_REPOSITORY2"
+else
+    echo "S3 offsite backup not configured (optional) — skipping"
 fi
 
 # ============================================================================
@@ -189,6 +204,7 @@ TOTAL_FILES_NEW=0
 TOTAL_FILES_CHANGED=0
 TOTAL_DIRS_NEW=0
 TOTAL_ADDED_SIZE="0 B"
+S3_STATUS="disabled"
 
 # ============================================================================
 # Backup Immich
@@ -199,6 +215,10 @@ echo "=========================================="
 echo "Starting Immich Backup"
 echo "=========================================="
 send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Backing up Immich...\"}"
+
+# Note: Immich DB backup is handled by Immich's built-in backup worker.
+# The worker exports DB dumps into the library directory, so they are
+# automatically included here — no separate pg_dumpall needed (DRY).
 
 # Run backup and capture output (works in both interactive and cron)
 IMMICH_OUTPUT=$(restic -r "$RESTIC_REPO" backup "$DOCKER_BASE/immich/library" --verbose 2>&1)
@@ -329,6 +349,35 @@ echo "Repository size: ${REPO_SIZE_GB} GB"
 echo "Total snapshots: $SNAPSHOT_COUNT"
 
 # ============================================================================
+# S3 Offsite Copy
+# ============================================================================
+# Uses `restic copy` which only transfers snapshots not yet in the S3 repo —
+# Restic deduplication keeps this efficient even for large Immich libraries.
+# Retention on S3 is sparser than local: weekly/monthly snapshots for DR only.
+
+if [[ "$S3_ENABLED" == "true" ]]; then
+    echo ""
+    echo "=========================================="
+    echo "Starting S3 Offsite Copy"
+    echo "=========================================="
+    send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Copying to S3...\"}"
+
+    if restic -r "$RESTIC_REPO" copy --repo2 "$S3_REPO" --verbose 2>&1; then
+        echo "S3 copy complete. Applying retention policy (weekly: $S3_KEEP_WEEKLY, monthly: $S3_KEEP_MONTHLY)..."
+        if restic -r "$S3_REPO" forget --keep-weekly "$S3_KEEP_WEEKLY" --keep-monthly "$S3_KEEP_MONTHLY" --prune; then
+            echo "S3 offsite copy and pruning complete."
+            S3_STATUS="success"
+        else
+            S3_STATUS="prune_failed"
+            echo "WARNING: S3 copy succeeded but pruning failed — local backup still succeeded"
+        fi
+    else
+        S3_STATUS="failed"
+        echo "WARNING: S3 offsite copy failed — local backup still succeeded"
+    fi
+fi
+
+# ============================================================================
 # Unmount and Finalize
 # ============================================================================
 
@@ -368,6 +417,7 @@ SUCCESS_JSON=$(cat <<EOF
   "teslamate_files_changed": $teslamate_files_changed,
   "repository_size_gb": $REPO_SIZE_GB,
   "snapshot_count": $SNAPSHOT_COUNT,
+  "s3_status": "$S3_STATUS",
   "last_success_time": "$(date --iso-8601=seconds)"
 }
 EOF
