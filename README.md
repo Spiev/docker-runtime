@@ -200,7 +200,7 @@ automation:
 - **Paperless**: Exports PostgreSQL database, then backs up all documents
 - **Home Assistant**: Backs up configuration files (yaml configs, custom_components) and HA's own backup archives
   - Excludes .storage/ and .cloud/ to avoid permission issues (included in HA backups)
-- **Storage**: External HDD with encrypted Restic repository
+- **Storage**: External HDD with encrypted Restic repository + optional S3 offsite copy (3-2-1 backup)
 - **Automation**: Cron-scheduled with MQTT status reporting
 
 ### Setup Backup Automation
@@ -209,7 +209,7 @@ automation:
 crontab -e
 
 # Daily backup at 2 AM with logging
-0 2 * * * /path/to/scripts/backup-to-hdd.sh >> /path/to/logs/backup.log 2>&1
+0 2 * * * /path/to/scripts/backup.sh >> /path/to/logs/backup.log 2>&1
 ```
 
 ### Restore from Backup
@@ -307,6 +307,70 @@ rm -rf /tmp/restore
 **Unmount backup drive:**
 ```bash
 sudo umount /mnt/sda1
+```
+
+### Restore from S3 (Offsite)
+
+Same commands as HDD restore, just using the S3 repo and its password. No drive mount needed.
+
+**Prerequisites:**
+```bash
+cd ~/docker/scripts
+source .restic.env
+```
+
+**List available snapshots:**
+```bash
+RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPOSITORY_S3" snapshots
+```
+
+**Smoke test (verify S3 restore works without downloading everything):**
+```bash
+RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPOSITORY_S3" restore latest \
+  --target /tmp/s3-restore-test \
+  --include '**/homeassistant/homeassistant/config/configuration.yaml'
+
+ls -la /tmp/s3-restore-test
+rm -rf /tmp/s3-restore-test
+```
+
+**Restore Home Assistant from S3:**
+```bash
+cd ~/docker/homeassistant && docker compose down
+
+RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPOSITORY_S3" restore latest \
+  --target /tmp/restore \
+  --include '**/homeassistant/homeassistant/config'
+
+cp -r /tmp/restore/home/stefan/docker/homeassistant/homeassistant/config/* \
+  ~/docker/homeassistant/homeassistant/config/
+docker compose up -d && rm -rf /tmp/restore
+```
+
+**Restore Immich from S3:**
+```bash
+cd ~/docker/immich && docker compose down
+
+RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPOSITORY_S3" restore latest \
+  --target /tmp/restore \
+  --include '**/immich/library'
+
+cp -r /tmp/restore/home/stefan/docker/immich/library/* ~/docker/immich/library/
+docker compose up -d && rm -rf /tmp/restore
+```
+
+**Restore Paperless from S3:**
+```bash
+cd ~/docker/paperless && docker compose down
+
+RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPOSITORY_S3" restore latest \
+  --target /tmp/restore \
+  --include '**/paperless/library'
+
+cp -r /tmp/restore/home/stefan/docker/paperless/library/* ~/docker/paperless/library/
+cd ~/docker/paperless/library/backup
+gunzip < paperless_*.sql.gz | docker exec -i paperless-db-1 psql -U paperless
+docker compose up -d && rm -rf /tmp/restore
 ```
 
 **Important Notes:**
