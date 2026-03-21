@@ -9,15 +9,10 @@ echo "Backup script started at $(date --iso-8601=ns)"
 # ============================================================================
 
 SCRIPT_DIR="$(dirname "$0")"
-RESTIC_REPO="/mnt/sda1/restic-repo"
 HDD_DEVICE="/dev/sda1"
 HDD_MOUNT="/mnt/sda1"
 # Adjust this path to your Docker directory
 DOCKER_BASE="${DOCKER_BASE:-$HOME/docker}"
-
-# S3 offsite repo config (credentials come from .restic.env — see .restic.env.example)
-S3_KEEP_WEEKLY=4    # keep 4 weekly snapshots offsite
-S3_KEEP_MONTHLY=12  # keep 12 monthly snapshots offsite
 
 # MQTT Topics
 MQTT_HOST="localhost"
@@ -75,6 +70,10 @@ source "$RESTIC_ENV"
 # Validate required variables are set
 if [[ -z "${RESTIC_PASSWORD:-}" ]]; then
     echo "ERROR: RESTIC_PASSWORD is not set in $RESTIC_ENV" >&2
+    exit 1
+fi
+if [[ -z "${RESTIC_REPO:-}" ]]; then
+    echo "ERROR: RESTIC_REPO is not set in $RESTIC_ENV" >&2
     exit 1
 fi
 
@@ -359,6 +358,10 @@ echo "Total snapshots: $SNAPSHOT_COUNT"
 # Uses `restic copy` which only transfers snapshots not yet in the S3 repo —
 # Restic deduplication keeps this efficient even for large Immich libraries.
 # Retention on S3 is sparser than local: weekly/monthly snapshots for DR only.
+#
+# IMPORTANT: The S3 repo must be initialized once before first use:
+#   source scripts/.restic.env
+#   RESTIC_PASSWORD="$RESTIC_PASSWORD2" restic -r "$RESTIC_REPOSITORY2" init
 
 if [[ "$S3_ENABLED" == "true" ]]; then
     echo ""
@@ -366,6 +369,9 @@ if [[ "$S3_ENABLED" == "true" ]]; then
     echo "Starting S3 Offsite Copy"
     echo "=========================================="
     send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Copying to S3...\"}"
+
+    S3_KEEP_WEEKLY="${S3_KEEP_WEEKLY:-4}"
+    S3_KEEP_MONTHLY="${S3_KEEP_MONTHLY:-12}"
 
     # RESTIC_FROM_PASSWORD = source (local HDD), RESTIC_PASSWORD = destination (S3)
     if RESTIC_FROM_PASSWORD="$RESTIC_PASSWORD" RESTIC_PASSWORD="$S3_PASSWORD" \
