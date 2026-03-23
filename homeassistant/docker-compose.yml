@@ -2,7 +2,7 @@ services:
   homeassistant:
     container_name: homeassistant
     # Pinned to 2026.1.3 due to Tibber API breaking changes in 2026.2.x
-    image: homeassistant/home-assistant:2026.3.3
+    image: homeassistant/home-assistant:2026.3.3@sha256:4c1d99af9fcb666263fff855edc2d1116066faa259f66e6768cee518c8ce3b06
     devices:
       - /dev/ttyACM0 # mappes zigbee Dongel to container
     network_mode: "host"
@@ -13,7 +13,7 @@ services:
       - NET_RAW
     restart: unless-stopped
   mosquitto:
-    image: eclipse-mosquitto:2.0.22
+    image: eclipse-mosquitto:2.0.22@sha256:6852da90a65dfff7aa3a1c8b249e92bb83c17ea8bbcce56bedff8707332a1a29
     user: root
     container_name: mosquitto
     restart: unless-stopped
@@ -25,7 +25,7 @@ services:
       - 1883:1883
       - 9001:9001
   matter-hub:
-    image: ghcr.io/riddix/home-assistant-matter-hub:2.0.35
+    image: ghcr.io/riddix/home-assistant-matter-hub:2.0.35@sha256:059801c45f151eb8cf4ae6271d4b2ec599f7879b6bf7aaec17f0ac956a4f24c6
     container_name: matter-hub
     restart: unless-stopped
     network_mode: host
@@ -35,7 +35,7 @@ services:
     volumes:
       - $PWD/home-assistant-matter-hub:/data
   music-assistant:
-    image: ghcr.io/music-assistant/server:2.7.11
+    image: ghcr.io/music-assistant/server:2.7.11@sha256:ff2d625856864912e85ff611dae4c5df814abfb7ffc3bd6020e8426b7af81c1e
     container_name: musicassistant
     restart: unless-stopped
     # Network mode must be set to host for MA to work correctly

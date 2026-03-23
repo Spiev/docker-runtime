@@ -30,12 +30,12 @@
 # documentation.
 services:
   broker:
-    image: docker.io/library/redis:8
+    image: docker.io/library/redis:8@sha256:315270d166080f537bbdf1b489b603aaaa213cb55a544acfa51feb7481abb1c0
     restart: unless-stopped
     volumes:
       - ./redisdata:/data
   db:
-    image: docker.io/library/postgres:18
+    image: docker.io/library/postgres:18@sha256:a9abf4275f9e99bff8e6aed712b3b7dfec9cac1341bba01c1ffdfce9ff9fc34a
     restart: unless-stopped
     volumes:
       # PostgreSQL 18+ uses version-specific subdirectory (18/docker)
@@ -45,7 +45,7 @@ services:
       POSTGRES_USER: paperless
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
   webserver:
-    image: ghcr.io/paperless-ngx/paperless-ngx:2.20.13
+    image: ghcr.io/paperless-ngx/paperless-ngx:2.20.13@sha256:4b05bcd28e6923768000b5d247cbf2c66fd49bdc3f3b05955bd4f6790a638b01
     restart: unless-stopped
     depends_on:
       - db
@@ -67,7 +67,7 @@ services:
       PAPERLESS_TIKA_GOTENBERG_ENDPOINT: http://gotenberg:3000
       PAPERLESS_TIKA_ENDPOINT: http://tika:9998
   gotenberg:
-    image: docker.io/gotenberg/gotenberg:8.28
+    image: docker.io/gotenberg/gotenberg:8.28@sha256:f172b1ce5ec7516ab9452d33bfe3f198d778d3de39655825aa550f4a33946666
     restart: unless-stopped
     # The gotenberg chromium route is used to convert .eml files. We do not
     # want to allow external content like tracking pixels or even javascript.
@@ -76,7 +76,7 @@ services:
       - "--chromium-disable-javascript=true"
       - "--chromium-allow-list=file:///tmp/.*"
   tika:
-    image: docker.io/apache/tika:3.2.3.0
+    image: docker.io/apache/tika:3.2.3.0@sha256:c0154cb95587cde64be74f35ada1a2bd7892219f3f0ac3c9dc6cab34046b3573
     restart: unless-stopped
 volumes:
   data:
