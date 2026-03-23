@@ -1,7 +1,6 @@
 services:
   homeassistant:
     container_name: homeassistant
-    # Pinned to 2026.1.3 due to Tibber API breaking changes in 2026.2.x
     image: homeassistant/home-assistant:2026.3.3@sha256:4c1d99af9fcb666263fff855edc2d1116066faa259f66e6768cee518c8ce3b06
     devices:
       - /dev/ttyACM0 # mappes zigbee Dongel to container
