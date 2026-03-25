@@ -24,7 +24,7 @@ services:
       - 1883:1883
       - 9001:9001
   matter-hub:
-    image: ghcr.io/riddix/home-assistant-matter-hub:2.0.35@sha256:059801c45f151eb8cf4ae6271d4b2ec599f7879b6bf7aaec17f0ac956a4f24c6
+    image: ghcr.io/riddix/home-assistant-matter-hub:2.0.36@sha256:424d3cf30452799e0a5c624f55e5dca98b18aa5b8d7f8931ad48fb90f3886e7f
     container_name: matter-hub
     restart: unless-stopped
     network_mode: host
