@@ -32,6 +32,8 @@ services:
       - POSTGRES_USER=${TM_DB_USER}
       - POSTGRES_PASSWORD=${TM_DB_PASS}
       - POSTGRES_DB=${TM_DB_NAME}
+    ports:
+      - 127.0.0.1:5432:5432
     volumes:
       # PostgreSQL 18+ uses version-specific subdirectory (18/docker)
       - ./postgres:/var/lib/postgresql
