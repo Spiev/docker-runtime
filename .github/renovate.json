@@ -4,7 +4,7 @@
   "dependencyDashboard": false,
   "pinDigests": true,
   "timezone": "Europe/Berlin",
-  "schedule": ["at any time"],
+  "schedule": ["once a day"],
   "packageRules": [
     {
       "description": "Auto-merge minor, patch and digest updates",
