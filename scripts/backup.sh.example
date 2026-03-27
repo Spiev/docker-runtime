@@ -70,7 +70,7 @@ for VAR in RESTIC_PASSWORD RESTIC_REPO HDD_DEVICE HDD_MOUNT DOCKER_BASE MQTT_HOS
     fi
 done
 
-S3_REPO="${RESTIC_REPOSITORY_S3:-}"
+S3_REPO="${RESTIC_REPO_S3:-}"
 S3_PASSWORD="${RESTIC_PASSWORD_S3:-}"
 # Defensive unset: restic auto-detects RESTIC_REPOSITORY2 as --repo2, which
 # conflicts with --from-repo. Unset to guard against old .restic.env files.
@@ -357,11 +357,12 @@ echo "Total snapshots: $SNAPSHOT_COUNT"
 # ============================================================================
 # Uses `restic copy` which only transfers snapshots not yet in the S3 repo —
 # Restic deduplication keeps this efficient even for large Immich libraries.
-# Retention on S3 is sparser than local: weekly/monthly snapshots for DR only.
+# S3 is a full mirror of the local repo — no retention policy applied here.
+# To manually prune S3 if needed, run forget/prune by hand.
 #
 # IMPORTANT: The S3 repo must be initialized once before first use:
 #   source scripts/.restic.env
-#   RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPOSITORY_S3" init
+#   RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPO_S3" init
 
 if [[ "$S3_ENABLED" == "true" ]]; then
     echo ""
@@ -369,25 +370,20 @@ if [[ "$S3_ENABLED" == "true" ]]; then
     echo "Starting S3 Offsite Copy"
     echo "=========================================="
 
-    S3_KEEP_WEEKLY="${S3_KEEP_WEEKLY:-4}"
-    S3_KEEP_MONTHLY="${S3_KEEP_MONTHLY:-12}"
-
     # Remove stale locks from previous interrupted runs
     echo "Checking for stale locks in S3 repo..."
     RESTIC_PASSWORD="$S3_PASSWORD" restic -r "$S3_REPO" unlock 2>&1 || true
 
     # RESTIC_FROM_PASSWORD = source (local HDD), RESTIC_PASSWORD = destination (S3)
+    # Pruning is intentionally NOT done here — S3 is a DR repo, keep all snapshots.
+    # To prune manually if needed:
+    #   source scripts/.restic.env
+    #   RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPO_S3" forget \
+    #     --keep-weekly 52 --keep-monthly 24 --prune
     if RESTIC_FROM_PASSWORD="$RESTIC_PASSWORD" RESTIC_PASSWORD="$S3_PASSWORD" \
        restic -r "$S3_REPO" copy --from-repo "$RESTIC_REPO" --verbose 2>&1; then
-        echo "S3 copy complete. Applying retention policy (weekly: $S3_KEEP_WEEKLY, monthly: $S3_KEEP_MONTHLY)..."
-        if RESTIC_PASSWORD="$S3_PASSWORD" \
-           restic -r "$S3_REPO" forget --keep-weekly "$S3_KEEP_WEEKLY" --keep-monthly "$S3_KEEP_MONTHLY" --prune; then
-            echo "S3 offsite copy and pruning complete."
-            S3_STATUS="success"
-        else
-            S3_STATUS="prune_failed"
-            echo "WARNING: S3 copy succeeded but pruning failed — local backup still succeeded"
-        fi
+        echo "S3 copy complete."
+        S3_STATUS="success"
     else
         S3_STATUS="failed"
         echo "WARNING: S3 offsite copy failed — local backup still succeeded"
