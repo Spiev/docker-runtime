@@ -164,6 +164,8 @@ cleanup() {
   "s3_status": "${S3_STATUS:-unknown}",
   "repository_size_gb": ${REPO_SIZE_GB:-0},
   "snapshot_count": ${SNAPSHOT_COUNT:-0},
+  "s3_repository_size_gb": ${S3_REPO_SIZE_GB:-0},
+  "s3_snapshot_count": ${S3_SNAPSHOT_COUNT:-0},
   "files_new": ${TOTAL_FILES_NEW:-0},
   "files_changed": ${TOTAL_FILES_CHANGED:-0},
   "dirs_new": ${TOTAL_DIRS_NEW:-0},
@@ -388,6 +390,14 @@ if [[ "$S3_ENABLED" == "true" ]]; then
         S3_STATUS="failed"
         echo "WARNING: S3 offsite copy failed — local backup still succeeded"
     fi
+
+    # Collect S3 repo stats for dashboard comparison
+    echo "Collecting S3 repository stats..."
+    S3_REPO_STATS=$(RESTIC_PASSWORD="$S3_PASSWORD" restic -r "$S3_REPO" stats --mode raw-data --json 2>/dev/null || echo "{}")
+    S3_REPO_SIZE_BYTES=$(echo "$S3_REPO_STATS" | jq -r '.total_size // 0')
+    S3_REPO_SIZE_GB=$(echo "scale=2; $S3_REPO_SIZE_BYTES / 1024 / 1024 / 1024" | bc)
+    S3_SNAPSHOT_COUNT=$(RESTIC_PASSWORD="$S3_PASSWORD" restic -r "$S3_REPO" snapshots --json 2>/dev/null | jq '. | length' || echo "0")
+    echo "S3 repository size: ${S3_REPO_SIZE_GB} GB, snapshots: $S3_SNAPSHOT_COUNT"
 fi
 
 # ============================================================================
@@ -430,6 +440,8 @@ SUCCESS_JSON=$(cat <<EOF
   "teslamate_files_changed": $teslamate_files_changed,
   "repository_size_gb": $REPO_SIZE_GB,
   "snapshot_count": $SNAPSHOT_COUNT,
+  "s3_repository_size_gb": ${S3_REPO_SIZE_GB:-0},
+  "s3_snapshot_count": ${S3_SNAPSHOT_COUNT:-0},
   "s3_status": "$S3_STATUS",
   "last_success_time": "$(date --iso-8601=seconds)"
 }

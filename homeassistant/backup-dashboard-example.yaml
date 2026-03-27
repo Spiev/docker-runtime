@@ -37,55 +37,34 @@ views:
             state_color: true
 
           # Schnellübersicht: Letzter Lauf + Dauer
-          - type: glance
+          # Hinweis: Glance-Karte zeigt bei Attributen nur den Entity-State an —
+          # daher Markdown-Karte mit Literal-Block (|) verwenden.
+          - type: markdown
             title: Letzter Backup
-            show_name: true
-            show_icon: true
-            entities:
-              - entity: sensor.restic_backup_status
-                name: Letzter Lauf
-                attribute: last_run
-                format: relative
-              - entity: sensor.restic_backup_status
-                name: Dauer (s)
-                attribute: duration_seconds
-                icon: mdi:timer-outline
-              - entity: sensor.restic_backup_status
-                name: S3 Status
-                attribute: s3_status
-                icon: mdi:cloud-check-outline
+            content: |
+              | | |
+              |---|---|
+              | **Letzter Lauf** | {{ state_attr('sensor.restic_backup_status', 'last_run') | as_datetime | relative_time }} |
+              | **Dauer** | {{ state_attr('sensor.restic_backup_status', 'duration_seconds') }}s |
+              | **S3 Status** | {{ state_attr('sensor.restic_backup_status', 's3_status') }} |
 
       # -----------------------------------------------------------------
-      # Zeile 2: Repository-Statistiken
+      # Zeile 2: Repository-Statistiken (lokal vs. S3)
       # -----------------------------------------------------------------
-      - type: glance
+      - type: markdown
         title: Repository
-        show_name: true
-        show_icon: true
-        entities:
-          - entity: sensor.restic_backup_status
-            name: Größe (GB)
-            attribute: repository_size_gb
-            icon: mdi:database
-          - entity: sensor.restic_backup_status
-            name: Snapshots
-            attribute: snapshot_count
-            icon: mdi:camera
-          - entity: sensor.restic_backup_status
-            name: Neue Dateien
-            attribute: files_new
-            icon: mdi:file-plus-outline
-          - entity: sensor.restic_backup_status
-            name: Geändert
-            attribute: files_changed
-            icon: mdi:file-edit-outline
+        content: |
+          | | **Lokal (SSD)** | **S3** |
+          |---|---|---|
+          | **Größe** | {{ state_attr('sensor.restic_backup_status', 'repository_size_gb') }} GB | {{ state_attr('sensor.restic_backup_status', 's3_repository_size_gb') }} GB |
+          | **Snapshots** | {{ state_attr('sensor.restic_backup_status', 'snapshot_count') }} | {{ state_attr('sensor.restic_backup_status', 's3_snapshot_count') }} |
 
       # -----------------------------------------------------------------
       # Zeile 3: Details pro Service
       # -----------------------------------------------------------------
       - type: markdown
         title: Details pro Service
-        content: >
+        content: |
           | Service | Neue Dateien | Geändert |
           |---------|-------------|----------|
           | Immich | {{ state_attr('sensor.restic_backup_status', 'immich_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'immich_files_changed') }} |
