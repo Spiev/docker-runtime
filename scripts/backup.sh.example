@@ -372,6 +372,10 @@ if [[ "$S3_ENABLED" == "true" ]]; then
     S3_KEEP_WEEKLY="${S3_KEEP_WEEKLY:-4}"
     S3_KEEP_MONTHLY="${S3_KEEP_MONTHLY:-12}"
 
+    # Remove stale locks from previous interrupted runs
+    echo "Checking for stale locks in S3 repo..."
+    RESTIC_PASSWORD="$S3_PASSWORD" restic -r "$S3_REPO" unlock 2>&1 || true
+
     # RESTIC_FROM_PASSWORD = source (local HDD), RESTIC_PASSWORD = destination (S3)
     if RESTIC_FROM_PASSWORD="$RESTIC_PASSWORD" RESTIC_PASSWORD="$S3_PASSWORD" \
        restic -r "$S3_REPO" copy --from-repo "$RESTIC_REPO" --verbose 2>&1; then
