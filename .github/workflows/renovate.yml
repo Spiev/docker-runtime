@@ -28,3 +28,4 @@ jobs:
         env:
           RENOVATE_AUTODISCOVER: "true"
           GITHUB_COM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RENOVATE_FORCE: ${{ github.event_name == 'workflow_dispatch' && '{"schedule":["at any time"]}' || '' }}
