@@ -70,7 +70,7 @@ for VAR in RESTIC_PASSWORD RESTIC_REPO HDD_DEVICE HDD_MOUNT DOCKER_BASE MQTT_HOS
     fi
 done
 
-S3_REPO="${RESTIC_REPOSITORY_S3:-}"
+S3_REPO="${RESTIC_REPO_S3:-}"
 S3_PASSWORD="${RESTIC_PASSWORD_S3:-}"
 # Defensive unset: restic auto-detects RESTIC_REPOSITORY2 as --repo2, which
 # conflicts with --from-repo. Unset to guard against old .restic.env files.
@@ -123,6 +123,7 @@ send_state() {
     mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" \
       -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
       -t "$STATE_TOPIC" \
+      -r \
       -m "$state"
 }
 
@@ -133,6 +134,7 @@ send_attributes() {
     mosquitto_pub -h "$MQTT_HOST" -p "$MQTT_PORT" \
       -u "$MQTT_USER" -P "$MQTT_PASSWORD" \
       -t "$ATTRIBUTES_TOPIC" \
+      -r \
       -m "$attributes"
 }
 
@@ -158,7 +160,23 @@ cleanup() {
   "last_run": "$(date --iso-8601=seconds)",
   "duration_seconds": $(($(date +%s) - START_TIME)),
   "error": "Backup failed with exit code $exit_code",
-  "last_error_time": "$(date --iso-8601=seconds)"
+  "last_error_time": "$(date --iso-8601=seconds)",
+  "s3_status": "${S3_STATUS:-unknown}",
+  "repository_size_gb": ${REPO_SIZE_GB:-0},
+  "snapshot_count": ${SNAPSHOT_COUNT:-0},
+  "s3_repository_size_gb": ${S3_REPO_SIZE_GB:-0},
+  "s3_snapshot_count": ${S3_SNAPSHOT_COUNT:-0},
+  "files_new": ${TOTAL_FILES_NEW:-0},
+  "files_changed": ${TOTAL_FILES_CHANGED:-0},
+  "dirs_new": ${TOTAL_DIRS_NEW:-0},
+  "immich_files_new": ${immich_files_new:-0},
+  "immich_files_changed": ${immich_files_changed:-0},
+  "paperless_files_new": ${paperless_files_new:-0},
+  "paperless_files_changed": ${paperless_files_changed:-0},
+  "homeassistant_files_new": ${homeassistant_files_new:-0},
+  "homeassistant_files_changed": ${homeassistant_files_changed:-0},
+  "teslamate_files_new": ${teslamate_files_new:-0},
+  "teslamate_files_changed": ${teslamate_files_changed:-0}
 }
 EOF
 )
@@ -190,7 +208,6 @@ send_discovery
 
 # Send initial state
 send_state "running"
-send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Starting backup...\"}"
 
 # Mount HDD with correct permissions
 echo "Mounting $HDD_DEVICE to $HDD_MOUNT..."
@@ -211,7 +228,6 @@ echo ""
 echo "=========================================="
 echo "Starting Immich Backup"
 echo "=========================================="
-send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Backing up Immich...\"}"
 
 # Note: Immich DB backup is handled by Immich's built-in backup worker.
 # The worker exports DB dumps into the library directory, so they are
@@ -233,14 +249,11 @@ echo ""
 echo "=========================================="
 echo "Starting Paperless Backup"
 echo "=========================================="
-send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Exporting Paperless DB...\"}"
 
 # Export Paperless database
 DB_BACKUP_FILE="$DOCKER_BASE/paperless/library/backup/paperless_$(date +%Y-%m-%d_%H_%M_%S).sql.gz"
 echo "Exporting Paperless database to $DB_BACKUP_FILE..."
 docker exec -t paperless-db-1 pg_dumpall -v -c -U paperless | gzip > "$DB_BACKUP_FILE"
-
-send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Backing up Paperless...\"}"
 
 # Run backup and capture output (works in both interactive and cron)
 PAPERLESS_OUTPUT=$(restic -r "$RESTIC_REPO" backup "$DOCKER_BASE/paperless/library" --verbose 2>&1)
@@ -258,7 +271,6 @@ echo ""
 echo "=========================================="
 echo "Starting Home Assistant Backup"
 echo "=========================================="
-send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Backing up Home Assistant...\"}"
 
 # Backup Home Assistant configuration directory
 # Includes: configuration.yaml, automations.yaml, scripts.yaml, secrets.yaml,
@@ -300,14 +312,11 @@ echo ""
 echo "=========================================="
 echo "Starting Teslamate Backup"
 echo "=========================================="
-send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Exporting Teslamate DB...\"}"
 
 # Export Teslamate database
 DB_BACKUP_FILE="$DOCKER_BASE/teslamate/backup/teslamate_$(date +%Y-%m-%d_%H_%M_%S).sql.gz"
 echo "Exporting Teslamate database to $DB_BACKUP_FILE..."
 docker exec -t teslamate-db pg_dumpall -v -c -U teslamate | gzip > "$DB_BACKUP_FILE"
-
-send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Backing up Teslamate...\"}"
 
 # Run backup and capture output (works in both interactive and cron)
 TESLAMATE_OUTPUT=$(restic -r "$RESTIC_REPO" backup "$DOCKER_BASE/teslamate/backup" --verbose 2>&1)
@@ -350,38 +359,45 @@ echo "Total snapshots: $SNAPSHOT_COUNT"
 # ============================================================================
 # Uses `restic copy` which only transfers snapshots not yet in the S3 repo —
 # Restic deduplication keeps this efficient even for large Immich libraries.
-# Retention on S3 is sparser than local: weekly/monthly snapshots for DR only.
+# S3 is a full mirror of the local repo — no retention policy applied here.
+# To manually prune S3 if needed, run forget/prune by hand.
 #
 # IMPORTANT: The S3 repo must be initialized once before first use:
 #   source scripts/.restic.env
-#   RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPOSITORY_S3" init
+#   RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPO_S3" init
 
 if [[ "$S3_ENABLED" == "true" ]]; then
     echo ""
     echo "=========================================="
     echo "Starting S3 Offsite Copy"
     echo "=========================================="
-    send_attributes "{\"last_run\": \"$(date --iso-8601=seconds)\", \"status\": \"Copying to S3...\"}"
 
-    S3_KEEP_WEEKLY="${S3_KEEP_WEEKLY:-4}"
-    S3_KEEP_MONTHLY="${S3_KEEP_MONTHLY:-12}"
+    # Remove stale locks from previous interrupted runs
+    echo "Checking for stale locks in S3 repo..."
+    RESTIC_PASSWORD="$S3_PASSWORD" restic -r "$S3_REPO" unlock 2>&1 || true
 
     # RESTIC_FROM_PASSWORD = source (local HDD), RESTIC_PASSWORD = destination (S3)
+    # Pruning is intentionally NOT done here — S3 is a DR repo, keep all snapshots.
+    # To prune manually if needed:
+    #   source scripts/.restic.env
+    #   RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPO_S3" forget \
+    #     --keep-weekly 52 --keep-monthly 24 --prune
     if RESTIC_FROM_PASSWORD="$RESTIC_PASSWORD" RESTIC_PASSWORD="$S3_PASSWORD" \
        restic -r "$S3_REPO" copy --from-repo "$RESTIC_REPO" --verbose 2>&1; then
-        echo "S3 copy complete. Applying retention policy (weekly: $S3_KEEP_WEEKLY, monthly: $S3_KEEP_MONTHLY)..."
-        if RESTIC_PASSWORD="$S3_PASSWORD" \
-           restic -r "$S3_REPO" forget --keep-weekly "$S3_KEEP_WEEKLY" --keep-monthly "$S3_KEEP_MONTHLY" --prune; then
-            echo "S3 offsite copy and pruning complete."
-            S3_STATUS="success"
-        else
-            S3_STATUS="prune_failed"
-            echo "WARNING: S3 copy succeeded but pruning failed — local backup still succeeded"
-        fi
+        echo "S3 copy complete."
+        S3_STATUS="success"
     else
         S3_STATUS="failed"
         echo "WARNING: S3 offsite copy failed — local backup still succeeded"
     fi
+
+    # Collect S3 repo stats for dashboard comparison
+    echo "Collecting S3 repository stats..."
+    S3_REPO_STATS=$(RESTIC_PASSWORD="$S3_PASSWORD" restic -r "$S3_REPO" stats --mode raw-data --json 2>/dev/null || echo "{}")
+    S3_REPO_SIZE_BYTES=$(echo "$S3_REPO_STATS" | jq -r '.total_size // 0')
+    S3_REPO_SIZE_GB=$(echo "scale=2; $S3_REPO_SIZE_BYTES / 1024 / 1024 / 1024" | bc)
+    S3_SNAPSHOT_COUNT=$(RESTIC_PASSWORD="$S3_PASSWORD" restic -r "$S3_REPO" snapshots --json 2>/dev/null | jq '. | length' || echo "0")
+    echo "S3 repository size: ${S3_REPO_SIZE_GB} GB, snapshots: $S3_SNAPSHOT_COUNT"
 fi
 
 # ============================================================================
@@ -424,6 +440,8 @@ SUCCESS_JSON=$(cat <<EOF
   "teslamate_files_changed": $teslamate_files_changed,
   "repository_size_gb": $REPO_SIZE_GB,
   "snapshot_count": $SNAPSHOT_COUNT,
+  "s3_repository_size_gb": ${S3_REPO_SIZE_GB:-0},
+  "s3_snapshot_count": ${S3_SNAPSHOT_COUNT:-0},
   "s3_status": "$S3_STATUS",
   "last_success_time": "$(date --iso-8601=seconds)"
 }
