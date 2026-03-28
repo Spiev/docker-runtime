@@ -348,12 +348,12 @@ source .restic.env
 
 **List available snapshots:**
 ```bash
-RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPOSITORY_S3" snapshots
+RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPO_S3" snapshots
 ```
 
 **Smoke test (verify S3 restore works without downloading everything):**
 ```bash
-RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPOSITORY_S3" restore latest \
+RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPO_S3" restore latest \
   --target /tmp/s3-restore-test \
   --include '**/homeassistant/homeassistant/config/configuration.yaml'
 
@@ -365,7 +365,7 @@ rm -rf /tmp/s3-restore-test
 ```bash
 cd ~/docker/homeassistant && docker compose down
 
-RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPOSITORY_S3" restore latest \
+RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPO_S3" restore latest \
   --target /tmp/restore \
   --include '**/homeassistant/homeassistant/config'
 
@@ -378,7 +378,7 @@ docker compose up -d && rm -rf /tmp/restore
 ```bash
 cd ~/docker/immich && docker compose down
 
-RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPOSITORY_S3" restore latest \
+RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPO_S3" restore latest \
   --target /tmp/restore \
   --include '**/immich/library'
 
@@ -390,7 +390,7 @@ docker compose up -d && rm -rf /tmp/restore
 ```bash
 cd ~/docker/paperless && docker compose down
 
-RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPOSITORY_S3" restore latest \
+RESTIC_PASSWORD="$RESTIC_PASSWORD_S3" restic -r "$RESTIC_REPO_S3" restore latest \
   --target /tmp/restore \
   --include '**/paperless/library'
 
