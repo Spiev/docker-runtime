@@ -5,6 +5,7 @@
   "pinDigests": true,
   "timezone": "Europe/Berlin",
   "schedule": ["* 0 * * *"],
+  "prHourlyLimit": 0,
   "packageRules": [
     {
       "description": "Auto-merge minor, patch and digest updates",
