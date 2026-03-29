@@ -23,7 +23,6 @@ fail2ban/test-fail2ban.sh
 dashboard-config.yaml
 
 # Allgemeine Config und Bewegungsdaten, die anders gesichert werden
-freshrss/config/
 homeassistant/homeassistant/*
 !homeassistant/homeassistant/config/
 homeassistant/homeassistant/config/*
@@ -40,7 +39,6 @@ immich/postgres/
 paperless/library/
 paperless/redisdata/
 paperless/postgres/
-pihole/etc-pihole/
 teslamate/postgres/
 teslamate/grafana/
 teslamate/import/

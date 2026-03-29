@@ -15,8 +15,8 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 
 ### Core Infrastructure
 - **Nginx Reverse Proxy** - SSL termination with Let's Encrypt (certbot)
-- **Pi-hole** - Network-wide ad blocking with DNS and IPv6 support
 - **Fail2ban** - Intrusion prevention with custom filters
+- **Pi-hole** - Migrated to Kubernetes, see [Spiev/k3s](https://github.com/Spiev/k3s)
 
 ### Home Automation
 - **Home Assistant** - Home automation hub
@@ -27,7 +27,7 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 ### Media & Documents
 - **Immich** - Photo and video management with ML features
 - **Paperless-ngx** - Document management with OCR
-- **FreshRSS** - RSS feed reader
+- **FreshRSS** - Migrated to Kubernetes, see [Spiev/k3s](https://github.com/Spiev/k3s)
 
 ### Vehicle & IoT
 - **Teslamate** - Tesla vehicle data logging with Grafana dashboards and Home Assistant integration
@@ -121,11 +121,9 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 │   └── scripts/
 │       └── pr-review.py            # Claude review logic (fetches upstream release notes)
 ├── proxy/              # Nginx reverse proxy + Let's Encrypt
-├── pihole/             # DNS-based ad blocker
 ├── homeassistant/      # Home automation stack (config templates: *.yaml.example)
 ├── immich/             # Photo management
 ├── paperless/          # Document management
-├── freshrss/           # RSS feed reader
 ├── teslamate/          # Tesla vehicle data logging + Grafana
 ├── fail2ban/           # Intrusion prevention configs
 └── scripts/            # Monitoring and backup automation
@@ -148,7 +146,7 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 
 ### Fail2ban Protection
 - Custom filters for Nginx auth failures, rate limiting, and scanning
-- Per-service jails (Immich, Paperless, FreshRSS, Home Assistant)
+- Per-service jails (Immich, Paperless, Home Assistant)
 - **Home Assistant special handling**: Monitors HA's internal log (HA returns HTTP 200 for failed logins)
 - Recidive jail for repeat offenders
 - DOCKER-USER iptables chain integration
@@ -534,7 +532,6 @@ docker compose up -d
 
 3. **Hardware Dependencies:**
    - Home Assistant: Requires Zigbee USB dongle (`/dev/ttyACM0`)
-   - Pi-hole: Requires DNS ports (53), may conflict with systemd-resolved
 
 ## 🤝 Contributing
 
