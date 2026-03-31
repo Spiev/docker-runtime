@@ -1,27 +1,22 @@
 # =============================================================================
 # Restic Backup Dashboard für Home Assistant
 # =============================================================================
-# So fügst Du das Dashboard hinzu:
+# Zeigt den Backup-Status beider Systeme:
+#   Docker-runtime (Pi1): sensor.restic_backup_status  — Immich, HA, Paperless*, Teslamate*
+#   k3s (Pi1/Pi2):        sensor.backup_*              — Paperless, Teslamate (nach Migration)
 #
-# Option A: Über die UI
-#   1. Einstellungen → Dashboards → Dashboard hinzufügen
-#   2. Neues Dashboard erstellen
-#   3. Rechts oben: 3 Punkte → Raw-Konfigurationseditor
-#   4. Den Inhalt ab "views:" unten einfügen
+# * Zeile entfernen sobald der Service zu k3s migriert ist.
 #
-# Option B: Als View in bestehendes Dashboard
-#   1. Bestehendes Dashboard öffnen → Bearbeiten
-#   2. View hinzufügen → Raw-Konfigurationseditor
-#   3. Inhalt ab "title: Backup" einfügen
+# Sensoren werden automatisch via MQTT Discovery erstellt — kein manueller
+# Eintrag in mqtt.yaml nötig. Erscheinen nach dem ersten Backup-Lauf.
 #
-# Voraussetzung: Das backup.sh.example Script läuft und sendet MQTT-Daten.
-# Die Entity sensor.restic_backup_status wird automatisch via MQTT Discovery
-# erstellt — kein manueller Eintrag in mqtt.yaml nötig.
+# Dashboard hinzufügen:
+#   Einstellungen → Dashboards → Dashboard hinzufügen → neues Dashboard
+#   Rechts oben: 3 Punkte → Raw-Konfigurationseditor → Inhalt ab "views:" einfügen
 #
-# Migration zu k3s:
-#   Paperless → k3s migriert: Zeile "Paperless" aus "Details pro Service" entfernen
-#   Teslamate → k3s migriert: Zeile "Teslamate" aus "Details pro Service" entfernen
-#   Dann haben nur noch Immich und Home Assistant Einträge hier.
+# Oder als View in bestehendes Dashboard:
+#   Dashboard öffnen → Bearbeiten → View hinzufügen → Raw-Konfigurationseditor
+#   Inhalt ab "title: Backup" einfügen
 # =============================================================================
 
 views:
@@ -29,21 +24,22 @@ views:
     path: backup
     icon: mdi:backup-restore
     cards:
-      # -----------------------------------------------------------------
-      # Zeile 1: Status-Übersicht
-      # -----------------------------------------------------------------
+
+      # =================================================================
+      # DOCKER-RUNTIME (Immich, Home Assistant, + Services vor Migration)
+      # =================================================================
+
       - type: vertical-stack
         cards:
-          # Hauptstatus
+          - type: markdown
+            content: "## Docker-runtime"
+
           - type: entity
             entity: sensor.restic_backup_status
             name: Backup Status
             icon: mdi:backup-restore
             state_color: true
 
-          # Schnellübersicht: Letzter Lauf + Dauer
-          # Hinweis: Glance-Karte zeigt bei Attributen nur den Entity-State an —
-          # daher Markdown-Karte mit Literal-Block (|) verwenden.
           - type: markdown
             title: Letzter Backup
             content: |
@@ -53,35 +49,84 @@ views:
               | **Dauer** | {{ state_attr('sensor.restic_backup_status', 'duration_seconds') }}s |
               | **S3 Status** | {{ state_attr('sensor.restic_backup_status', 's3_status') }} |
 
-      # -----------------------------------------------------------------
-      # Zeile 2: Repository-Statistiken (lokal vs. S3)
-      # -----------------------------------------------------------------
       - type: markdown
-        title: Repository
+        title: Repository (Docker-runtime)
         content: |
           | | **Lokal (SSD)** | **S3** |
           |---|---|---|
           | **Größe** | {{ state_attr('sensor.restic_backup_status', 'repository_size_gb') }} GB | {{ state_attr('sensor.restic_backup_status', 's3_repository_size_gb') }} GB |
           | **Snapshots** | {{ state_attr('sensor.restic_backup_status', 'snapshot_count') }} | {{ state_attr('sensor.restic_backup_status', 's3_snapshot_count') }} |
 
-      # -----------------------------------------------------------------
-      # Zeile 3: Details pro Service
-      # -----------------------------------------------------------------
       - type: markdown
-        title: Details pro Service
+        title: Details pro Service (Docker-runtime)
         content: |
           | Service | Neue Dateien | Geändert |
           |---------|-------------|----------|
           | Immich | {{ state_attr('sensor.restic_backup_status', 'immich_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'immich_files_changed') }} |
-          | Paperless | {{ state_attr('sensor.restic_backup_status', 'paperless_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'paperless_files_changed') }} |
           | Home Assistant | {{ state_attr('sensor.restic_backup_status', 'homeassistant_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'homeassistant_files_changed') }} |
-          | Teslamate | {{ state_attr('sensor.restic_backup_status', 'teslamate_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'teslamate_files_changed') }} |
+          | Paperless* | {{ state_attr('sensor.restic_backup_status', 'paperless_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'paperless_files_changed') }} |
+          | Teslamate* | {{ state_attr('sensor.restic_backup_status', 'teslamate_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'teslamate_files_changed') }} |
 
-      # -----------------------------------------------------------------
-      # Zeile 4: Verlauf / Logbuch
-      # -----------------------------------------------------------------
+      # =================================================================
+      # K3S (Paperless, Teslamate — nach Migration aktiv)
+      # =================================================================
+
+      - type: vertical-stack
+        cards:
+          - type: markdown
+            content: "## k3s"
+
+          - type: entity
+            entity: sensor.backup_overall
+            name: Backup Gesamt (k3s)
+            icon: mdi:kubernetes
+            state_color: true
+
+          - type: markdown
+            title: Letzter Backup (k3s)
+            content: |
+              | | |
+              |---|---|
+              | **Letzter Lauf** | {{ state_attr('sensor.backup_overall', 'last_run') | as_datetime | relative_time }} |
+              | **Letzter Erfolg** | {{ state_attr('sensor.backup_overall', 'last_success_time') | as_datetime | relative_time }} |
+              | **Dauer** | {{ state_attr('sensor.backup_overall', 'duration_seconds') }}s |
+
+      - type: markdown
+        title: Repository (k3s S3)
+        content: |
+          | | |
+          |---|---|
+          | **Größe** | {{ state_attr('sensor.backup_overall', 'repository_size_gb') }} GB |
+          | **Snapshots** | {{ state_attr('sensor.backup_overall', 'snapshot_count') }} |
+          | **Aktive Services** | {{ state_attr('sensor.backup_overall', 'active_services') }} |
+
+      - type: entities
+        title: Status pro Service (k3s)
+        entities:
+          - entity: sensor.backup_paperless
+            name: Paperless-ngx
+            icon: mdi:file-document
+          - entity: sensor.backup_teslamate
+            name: Teslamate
+            icon: mdi:car-electric
+
+      - type: markdown
+        title: Details pro Service (k3s)
+        content: |
+          | Service | Neue Dateien | Geändert | Letzter Lauf |
+          |---------|-------------|----------|--------------|
+          | Paperless | {{ state_attr('sensor.backup_paperless', 'files_new') }} | {{ state_attr('sensor.backup_paperless', 'files_changed') }} | {{ state_attr('sensor.backup_paperless', 'last_run') | as_datetime | relative_time }} |
+          | Teslamate | {{ state_attr('sensor.backup_teslamate', 'files_new') }} | {{ state_attr('sensor.backup_teslamate', 'files_changed') }} | {{ state_attr('sensor.backup_teslamate', 'last_run') | as_datetime | relative_time }} |
+
+      # =================================================================
+      # VERLAUF (alle Sensoren)
+      # =================================================================
+
       - type: logbook
         title: Backup-Verlauf
         entities:
           - sensor.restic_backup_status
+          - sensor.backup_overall
+          - sensor.backup_paperless
+          - sensor.backup_teslamate
         hours_to_show: 168  # 7 Tage
