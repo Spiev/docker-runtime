@@ -38,6 +38,25 @@
     scan_interval: 60
 
 # -----------------------------------------------------------------------------
+# DNS Monitoring (Pi-hole auf k3s)
+# -----------------------------------------------------------------------------
+- sensor:
+    name: Pi-hole DNS Latency (IPv4)
+    unique_id: pihole_dns_latency_ipv4
+    command: "dig @YOUR_PIHOLE_IP heise.de AAAA +time=2 +tries=1 | awk '/Query time/ {print $4}'"
+    unit_of_measurement: "ms"
+    state_class: measurement
+    scan_interval: 30
+
+- sensor:
+    name: Pi-hole DNS Latency (IPv6)
+    unique_id: pihole_dns_latency_ipv6
+    command: "dig @YOUR_PIHOLE_IPV6 heise.de AAAA +time=2 +tries=1 | awk '/Query time/ {print $4}'"
+    unit_of_measurement: "ms"
+    state_class: measurement
+    scan_interval: 30
+
+# -----------------------------------------------------------------------------
 # Weitere nützliche Command Line Sensoren (Beispiele)
 # -----------------------------------------------------------------------------
 # - sensor:

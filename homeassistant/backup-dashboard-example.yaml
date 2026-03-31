@@ -17,6 +17,11 @@
 # Voraussetzung: Das backup.sh.example Script läuft und sendet MQTT-Daten.
 # Die Entity sensor.restic_backup_status wird automatisch via MQTT Discovery
 # erstellt — kein manueller Eintrag in mqtt.yaml nötig.
+#
+# Migration zu k3s:
+#   Paperless → k3s migriert: Zeile "Paperless" aus "Details pro Service" entfernen
+#   Teslamate → k3s migriert: Zeile "Teslamate" aus "Details pro Service" entfernen
+#   Dann haben nur noch Immich und Home Assistant Einträge hier.
 # =============================================================================
 
 views:
