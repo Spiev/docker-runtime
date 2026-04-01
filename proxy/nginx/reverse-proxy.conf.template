@@ -85,6 +85,12 @@ upstream homeassistant_backend {
 server {
     listen 80 default_server;
     server_name _;
+
+    # Serve ACME challenge files without redirecting to HTTPS
+    location /.well-known/acme-challenge/ {
+        root /usr/share/nginx/html;
+    }
+
     return 301 https://$host$request_uri;
 }
 
