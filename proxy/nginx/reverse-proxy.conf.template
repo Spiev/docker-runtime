@@ -92,7 +92,12 @@ server {
         try_files $uri =404;
     }
 
-    return 301 https://$host$request_uri;
+    # Redirect all other HTTP traffic to HTTPS
+    # NOTE: return at server level runs before location matching (rewrite phase),
+    # so it must be inside location / to allow /.well-known/acme-challenge/ through.
+    location / {
+        return 301 https://$host$request_uri;
+    }
 }
 
 
