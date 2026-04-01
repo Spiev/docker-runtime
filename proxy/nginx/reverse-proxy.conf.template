@@ -89,6 +89,7 @@ server {
     # Serve ACME challenge files without redirecting to HTTPS
     location /.well-known/acme-challenge/ {
         root /usr/share/nginx/html;
+        try_files $uri =404;
     }
 
     return 301 https://$host$request_uri;
