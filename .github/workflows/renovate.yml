@@ -3,8 +3,9 @@ name: Renovate
 on:
   schedule:
     # Runs every 6 hours — nginx gets checked on every run (first line of defense),
-    # all other services are limited to the 03:00 window via renovate.json schedule.
-    - cron: "0 */6 * * *"
+    # all other services are limited to the midnight Berlin window via renovate.json schedule.
+    # 22:00 UTC = midnight CEST (summer), 23:00 UTC = midnight CET (winter)
+    - cron: "0 0,6,12,18,22,23 * * *"
   workflow_dispatch: # allow manual trigger
 
 permissions:
