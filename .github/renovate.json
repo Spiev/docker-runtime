@@ -28,6 +28,13 @@
       "matchPackageNames": ["immich-app/postgres"],
       "matchUpdateTypes": ["major"],
       "enabled": false
+    },
+    {
+      "description": "Home Assistant monthly releases (minor in semver) require manual review — breaking changes are common",
+      "matchPackageNames": ["homeassistant/home-assistant"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": false,
+      "labels": ["homeassistant", "needs-review"]
     }
   ]
 }
