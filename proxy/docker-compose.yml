@@ -1,7 +1,7 @@
 ---
 services:
   certbot-init:
-    image: certbot/certbot@sha256:c23159d30afdd9c97960578aa4654f5901de6cae394958f894074dedd55e599d
+    image: certbot/certbot@sha256:78a7eaa40af657301e25731297b6e73646c695370d17e9bb03189fa82966d65c
     entrypoint: /bin/sh
     command: -c 'test -d /etc/letsencrypt/live/${DOMAIN1} || certbot certonly -v --standalone -v -d $DOMAIN1 -d $DOMAIN2 -d $DOMAIN3 -d $DOMAIN4 -m $EMAIL --force-renewal --agree-tos'
     # Initial recreation when new host is added
@@ -37,7 +37,7 @@ services:
         required: true
     restart: unless-stopped      
   certbot:
-    image: certbot/certbot@sha256:c23159d30afdd9c97960578aa4654f5901de6cae394958f894074dedd55e599d
+    image: certbot/certbot@sha256:78a7eaa40af657301e25731297b6e73646c695370d17e9bb03189fa82966d65c
     entrypoint: /bin/sh
     command: -c 'trap exit TERM; while :; do certbot renew; sleep 24h && wait $${!}; done;'
     depends_on:
