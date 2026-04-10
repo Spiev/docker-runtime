@@ -39,6 +39,7 @@ def parse_renovate_update(pr_title):
     - "update anthropics/claude-code-action digest to 657fb7c"
     - "update nginx docker tag to v1.29.8"
     - "update immich monorepo to v2.7.3"
+    - "update renovatebot/github-action action to v46.1.8"
     """
     digest_match = re.search(
         r'update (.+?) (?:docker )?digest to ([a-f0-9]+)', pr_title, re.IGNORECASE
@@ -57,6 +58,13 @@ def parse_renovate_update(pr_title):
     )
     if mono_match:
         return 'version', mono_match.group(1).strip(), mono_match.group(2), None
+
+    # GitHub Actions version update: "update renovatebot/github-action action to v46.1.8"
+    action_match = re.search(
+        r'update (.+?) action to v?(\S+)', pr_title, re.IGNORECASE
+    )
+    if action_match:
+        return 'version', action_match.group(1).strip(), action_match.group(2), None
 
     return 'unknown', None, None, None
 
