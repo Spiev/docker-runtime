@@ -34,7 +34,7 @@ services:
     volumes:
       - $PWD/home-assistant-matter-hub:/data
   music-assistant:
-    image: ghcr.io/music-assistant/server:2.8.2@sha256:4940a9a2602d895b4e9d4b877d7e4fa6161efe77098347072eef88d633fbe85f
+    image: ghcr.io/music-assistant/server:2.8.3@sha256:b25d12126259c9dfb643236a3b5361b7b63fd9dbb0370a5b607a4dfaf316a909
     container_name: musicassistant
     restart: unless-stopped
     # Network mode must be set to host for MA to work correctly
