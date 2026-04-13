@@ -76,7 +76,7 @@ upstream homeassistant_backend {
 }
 
 upstream seafile_backend {
-    server ${K3S_IP}:80;
+    server ${K3S_IP};
 }
 
 
