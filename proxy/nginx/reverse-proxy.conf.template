@@ -76,7 +76,7 @@ upstream homeassistant_backend {
 }
 
 upstream seafile_backend {
-    server 192.168.178.176:80;   # Traefik MetalLB-IP (k3s)
+    server ${K3S_IP}:80;
 }
 
 
