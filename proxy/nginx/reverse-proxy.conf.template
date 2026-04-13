@@ -75,6 +75,10 @@ upstream homeassistant_backend {
     server ${BACKEND_IP}:8123;
 }
 
+upstream seafile_backend {
+    server 192.168.178.176:80;   # Traefik MetalLB-IP (k3s)
+}
+
 
 # ============================================================================
 # HTTP TO HTTPS REDIRECT
@@ -134,8 +138,8 @@ server {
     # ────────────────────────────────────────────────────────────────────────
     # Upload & Timeout Limits
     # ────────────────────────────────────────────────────────────────────────
-    # Upload limit for photos/videos (5GB max for 4K video files)
-    client_max_body_size 5120M;
+    # No upload limit — Immich is behind auth, large videos (>5GB) must be supported
+    client_max_body_size 0;
 
     # Timeouts (5 minutes - ML processing can take time)
     client_body_timeout 300s;
@@ -431,5 +435,82 @@ server {
 
         include /etc/nginx/includes/proxy-headers.conf;
         proxy_pass http://homeassistant_backend;
+    }
+}
+
+
+# ============================================================================
+# VIRTUAL HOST: DOMAIN5 - Seafile (File Storage)
+# ============================================================================
+# Service: Seafile - Self-hosted file sync and share
+# Backend: Traefik (k3s ingress, MetalLB) → Seafile Pod
+# Features:
+# - Large file uploads (no size limit)
+# - Seafile file server under /seafhttp
+# Security:
+# - Restricted to home network only (OIDC not yet configured)
+# - Remove allow/deny lines once OIDC + public access is ready
+# ============================================================================
+
+server {
+    listen 443 ssl;
+    server_name ${DOMAIN5};
+
+    # ────────────────────────────────────────────────────────────────────────
+    # SSL Certificate Configuration
+    # ────────────────────────────────────────────────────────────────────────
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN1}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN1}/privkey.pem;
+
+    include /etc/nginx/includes/ssl-config.conf;
+    include /etc/nginx/includes/security-headers.conf;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Upload & Timeout Limits
+    # ────────────────────────────────────────────────────────────────────────
+    # No limit for file uploads
+    client_max_body_size 0;
+
+    # Timeouts for large file transfers
+    client_body_timeout 300s;
+    client_header_timeout 60s;
+    proxy_read_timeout 300s;
+    proxy_send_timeout 300s;
+    send_timeout 300s;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Connection Limiting
+    # ────────────────────────────────────────────────────────────────────────
+    limit_conn conn_limit 10;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Locations
+    # ────────────────────────────────────────────────────────────────────────
+
+    # File server endpoint (large uploads — no request buffering)
+    location /seafhttp {
+        # TODO: Remove allow/deny once OIDC is configured
+        allow 192.168.178.0/24;
+        allow 2003:f4:9f40:9000::/64;
+        allow fd9d:c2c4:babc::/48;
+        deny all;
+
+        proxy_request_buffering off;
+        include /etc/nginx/includes/proxy-headers.conf;
+        proxy_pass http://seafile_backend;
+    }
+
+    # Main web UI
+    location / {
+        limit_req zone=general_limit burst=50 nodelay;
+
+        # TODO: Remove allow/deny once OIDC is configured
+        allow 192.168.178.0/24;
+        allow 2003:f4:9f40:9000::/64;
+        allow fd9d:c2c4:babc::/48;
+        deny all;
+
+        include /etc/nginx/includes/proxy-headers.conf;
+        proxy_pass http://seafile_backend;
     }
 }
