@@ -11,7 +11,7 @@ services:
     volumes:
       - cert_volume:/etc/letsencrypt
   nginx:
-    image: nginx:1.30.0-alpine@sha256:1cbc8e50eadf088fcbb1d13634f52f5547ffbe48c5eb41f2193712fd5bde873e
+    image: nginx:1.30.0-alpine@sha256:f60d139a69209d4340f6621fc6a50c9843702214231522a3390432f8db0ed870
     entrypoint: /bin/sh
     command: -c 'while :; do sleep 6h && wait $${!}; nginx -s reload; done & /docker-entrypoint.sh nginx -g "daemon off;error_log /dev/stdout debug;"'
     ports:
