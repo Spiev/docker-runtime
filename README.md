@@ -30,7 +30,7 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 - **FreshRSS** - Migrated to Kubernetes, see [Spiev/k3s](https://github.com/Spiev/k3s)
 
 ### Vehicle & IoT
-- **Teslamate** - Tesla vehicle data logging with Grafana dashboards and Home Assistant integration
+- **Teslamate** - Migrated to Kubernetes, see [Spiev/k3s](https://github.com/Spiev/k3s)
 
 ### Monitoring & Automation
 - **Backup Scripts** - Automated Restic backups with MQTT status reporting
@@ -492,7 +492,6 @@ sudo fail2ban-client banned
 | Service | Version | Image |
 |---------|---------|-------|
 | Paperless | 18 | `postgres:18` |
-| Teslamate | 18 | `postgres:18-alpine` |
 | Immich | 14 | Custom with VectorChord |
 
 **PostgreSQL 18+ Volume Mount:**
