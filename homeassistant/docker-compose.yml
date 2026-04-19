@@ -1,7 +1,7 @@
 services:
   homeassistant:
     container_name: homeassistant
-    image: homeassistant/home-assistant:2026.4.2@sha256:4c940155cfd5b0187a6faee2db5d52b98bb573edc1aeee95d0818bb17b6534d7
+    image: homeassistant/home-assistant:2026.4.3@sha256:ae0800c81fea16bc1241ce03bddb9c6260566e90f58b09d3e5a629e4f68bdc0b
     devices:
       - /dev/ttyACM0 # mappes zigbee Dongel to container
     network_mode: "host"
@@ -12,7 +12,7 @@ services:
       - NET_RAW
     restart: unless-stopped
   mosquitto:
-    image: eclipse-mosquitto:2.0.22@sha256:6852da90a65dfff7aa3a1c8b249e92bb83c17ea8bbcce56bedff8707332a1a29
+    image: eclipse-mosquitto:2.0.22@sha256:914f529386804c8278a4e581526b9be5e1604df44b30daabc70aa97dcefe5268
     user: root
     container_name: mosquitto
     restart: unless-stopped
@@ -34,7 +34,7 @@ services:
     volumes:
       - $PWD/home-assistant-matter-hub:/data
   music-assistant:
-    image: ghcr.io/music-assistant/server:2.8.4@sha256:f25ab51703e81e18c90d023916d2bc7c8b1ef98b99503644fc12277bacc69ecd
+    image: ghcr.io/music-assistant/server:2.8.5@sha256:fb0ea93078c747d327f86a832d6e11aa2e47dafa6009cf0d4aee5bab60db19c4
     container_name: musicassistant
     restart: unless-stopped
     # Network mode must be set to host for MA to work correctly
