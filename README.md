@@ -124,7 +124,6 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 ├── homeassistant/      # Home automation stack (config templates: *.yaml.example)
 ├── immich/             # Photo management
 ├── paperless/          # Document management
-├── teslamate/          # Tesla vehicle data logging + Grafana
 ├── fail2ban/           # Intrusion prevention configs
 └── scripts/            # Monitoring and backup automation
     ├── *.example       # Template scripts (tracked in git)
@@ -556,7 +555,6 @@ This project is provided as-is for educational and personal use. Adapt as needed
 - [Home Assistant](https://www.home-assistant.io/)
 - [Immich](https://immich.app/)
 - [Paperless-ngx](https://docs.paperless-ngx.com/)
-- [Teslamate](https://docs.teslamate.org/)
 - [Restic Backup](https://restic.net/)
 
 ---
