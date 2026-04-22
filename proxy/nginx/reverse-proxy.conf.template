@@ -448,8 +448,7 @@ server {
 # - Large file uploads (no size limit)
 # - Seafile file server under /seafhttp
 # Security:
-# - Restricted to home network only (OIDC not yet configured)
-# - Remove allow/deny lines once OIDC + public access is ready
+# - Public access, protected by Seafile 2FA + fail2ban (nginx-4xx jail)
 # ============================================================================
 
 server {
@@ -489,12 +488,6 @@ server {
 
     # File server endpoint (large uploads — no request buffering)
     location /seafhttp {
-        # TODO: Remove allow/deny once OIDC is configured
-        allow 192.168.178.0/24;
-        allow 2003:f4:9f40:9000::/64;
-        allow fd9d:c2c4:babc::/48;
-        deny all;
-
         proxy_request_buffering off;
         include /etc/nginx/includes/proxy-headers.conf;
         proxy_pass http://seafile_backend;
@@ -503,12 +496,6 @@ server {
     # Main web UI
     location / {
         limit_req zone=general_limit burst=50 nodelay;
-
-        # TODO: Remove allow/deny once OIDC is configured
-        allow 192.168.178.0/24;
-        allow 2003:f4:9f40:9000::/64;
-        allow fd9d:c2c4:babc::/48;
-        deny all;
 
         include /etc/nginx/includes/proxy-headers.conf;
         proxy_pass http://seafile_backend;
