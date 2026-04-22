@@ -1,18 +1,20 @@
 # ============================================================================
 # Nginx Reverse Proxy Configuration
 # ============================================================================
-# This configuration file manages reverse proxy settings for three services:
-# - DOMAIN1: Immich (Photo Management)
-# - DOMAIN2: Paperless (Document Management)
-# - DOMAIN3: FreshRSS (RSS Feed Reader)
-# - DOMAIN4: HomeAssistant (SmartHome System)
+# This configuration file manages reverse proxy settings for:
+# - DOMAIN1: Immich (Photo Management) — Docker on raspberrypi
+# - DOMAIN2: Paperless (Document Management) — k3s via Traefik
+# - DOMAIN3: FreshRSS (RSS Feed Reader) — k3s via Traefik
+# - DOMAIN4: HomeAssistant (SmartHome System) — Docker on raspberrypi
+# - DOMAIN5: Seafile (File Storage) — k3s via Traefik
 #
 # Environment variables (set in docker-compose.yml from .env):
-# - ${DOMAIN1}, ${DOMAIN2}, ${DOMAIN3}, ${DOMAIN4}: Domain names for each service
-# - ${BACKEND_IP}: IP address of the backend server running the services
+# - ${DOMAIN1}–${DOMAIN5}: Domain names for each service
+# - ${BACKEND_IP}: IP of raspberrypi (Docker services: Immich, HA)
+# - ${K3S_IP}: IP of k3s node — Traefik listens on port 80 (Paperless, FreshRSS, Seafile)
 #
 # Maintainer: Stefan
-# Last updated: 2025-12-31
+# Last updated: 2026-04-22
 # ============================================================================
 
 
@@ -203,13 +205,9 @@ server {
 # ============================================================================
 # VIRTUAL HOST: DOMAIN2 - Paperless (Document Management)
 # ============================================================================
-# Service: Paperless-ngx - Document management system with OCR
-# Backend: Port 8000
-# Features:
-# - Full-text search with PostgreSQL
-# - OCR via Tesseract/Tika
-# - Document archival and tagging
-# - Admin login blocked for security
+# Service: Paperless-ngx — document management system with OCR
+# Backend: k3s Traefik (${K3S_IP}:80) → paperless-webserver:8000
+# Auth: Google OIDC only (PAPERLESS_DISABLE_REGULAR_LOGIN=true)
 # ============================================================================
 
 server {
@@ -252,7 +250,8 @@ server {
     # Locations
     # ────────────────────────────────────────────────────────────────────────
 
-    # Block admin login endpoint (security measure - use direct backend access)
+    # Block Django admin login — has its own username/password form that
+    # bypasses PAPERLESS_DISABLE_REGULAR_LOGIN (OIDC-only policy)
     location /admin/login {
         return 302 /;
     }
