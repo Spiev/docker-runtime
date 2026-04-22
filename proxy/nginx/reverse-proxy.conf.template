@@ -64,11 +64,11 @@ upstream immich_backend {
 }
 
 upstream paperless_backend {
-    server ${BACKEND_IP}:8000;
+    server ${K3S_IP};
 }
 
 upstream freshrss_backend {
-    server ${DOMAIN3_BACKEND_IP};
+    server ${K3S_IP};
 }
 
 upstream homeassistant_backend {

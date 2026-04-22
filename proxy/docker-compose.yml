@@ -31,7 +31,6 @@ services:
       DOMAIN4: ${DOMAIN4}
       DOMAIN5: ${DOMAIN5}
       BACKEND_IP: ${BACKEND_IP}
-      DOMAIN3_BACKEND_IP: ${DOMAIN3_BACKEND_IP}
       K3S_IP: ${K3S_IP}
     depends_on:
       certbot-init:
