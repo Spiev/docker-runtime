@@ -39,14 +39,7 @@ cards:
           | **Snapshots** | {{ state_attr('sensor.backup_overall_status',
           'snapshot_count') | default('—') }} |
 
-          | **Neue Dateien** | {{ state_attr('sensor.backup_overall_status',
-          'files_new') | default('—') }} |
-
-          | **Geänderte Dateien** | {{ state_attr('sensor.backup_overall_status',
-          'files_changed') | default('—') }} |
-
   - type: vertical-stack
-    title: Services
     cards:
       - type: entity
         entity: sensor.backup_teslamate_status
@@ -59,18 +52,52 @@ cards:
 
           |---|---|
 
-          | **Letzter Lauf** | {% set t = state_attr('sensor.backup_teslamate_status',
-          'last_run') %}{{ t | as_datetime | relative_time if t else '—' }} |
-
           | **Neue Dateien** | {{ state_attr('sensor.backup_teslamate_status',
           'files_new') | default('—') }} |
 
           | **Geänderte Dateien** | {{ state_attr('sensor.backup_teslamate_status',
           'files_changed') | default('—') }} |
 
+      - type: entity
+        entity: sensor.backup_seafile_status
+        name: Seafile
+        icon: mdi:file-arrow-up-down-outline
+        state_color: true
+      - type: markdown
+        content: >
+          | | |
+
+          |---|---|
+
+          | **Neue Dateien** | {{ state_attr('sensor.backup_seafile_status',
+          'files_new') | default('—') }} |
+
+          | **Geänderte Dateien** | {{ state_attr('sensor.backup_seafile_status',
+          'files_changed') | default('—') }} |
+
+      - type: entity
+        entity: sensor.backup_paperless_ngx
+        name: Paperless
+        icon: mdi:newspaper
+        state_color: true
+      - type: markdown
+        content: >
+          | | |
+
+          |---|---|
+
+          | **Neue Dateien** | {{ state_attr('sensor.backup_paperless_ngx',
+          'files_new') | default('—') }} |
+
+          | **Geänderte Dateien** | {{ state_attr('sensor.backup_paperless_ngx',
+          'files_changed') | default('—') }} |
+
   - type: logbook
     title: Backup-Verlauf
-    entities:
-      - sensor.backup_overall_status
-      - sensor.backup_teslamate_status
     hours_to_show: 168
+    target:
+      entity_id:
+        - sensor.backup_overall_status
+        - sensor.backup_teslamate_status
+        - sensor.backup_seafile_status
+        - sensor.backup_paperless_ngx
