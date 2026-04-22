@@ -1,7 +1,7 @@
 # ============================================================================
 # Fail2Ban Jails for Nginx Reverse Proxy
 # ============================================================================
-# Protects ALL services behind nginx (Immich, Paperless, FreshRSS, Home Assistant)
+# Protects ALL services behind nginx (Immich, Paperless, FreshRSS, Home Assistant, Seafile)
 # Uses shared nginx access.log - one ban blocks attacker from all services
 # ============================================================================
 
@@ -20,6 +20,18 @@ maxretry = 3
 # Time window for counting failures (10 minutes)
 findtime = 600
 # Target DOCKER-USER chain (blocks traffic before Docker routing)
+chain = DOCKER-USER
+
+[seafile-auth]
+enabled = true
+ignoreip = 127.0.0.1/8 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
+logpath = /home/stefan/docker/proxy/nginx/logs/access.log
+filter = seafile-auth
+bantime = 24h
+# 2FA login flow generates 2x 400 per attempt (OTP-required + OTP-submit).
+# maxretry=10 allows ~5 failed login attempts before ban.
+maxretry = 10
+findtime = 600
 chain = DOCKER-USER
 
 [nginx-malicious-uri]
