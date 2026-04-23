@@ -1,35 +1,59 @@
 #!/bin/bash
 # =============================================================================
-# Dashboard Deploy Script
+# HA Dashboard Sync
 # =============================================================================
-# Zieht aktuelle Dashboard-YAML aus dem Git-Repo und kopiert sie
-# in das Home Assistant Config-Verzeichnis. HA liest die Datei direkt
-# (YAML-Mode Dashboard) — kein manueller Import nötig.
+# Zieht aktuelle Dashboard-YAML aus dem Git-Repo, kopiert sie in das
+# Home Assistant Config-Verzeichnis und löst einen HA-Reload aus.
 #
 # Setup:
-#   cp deploy-dashboard.sh.example deploy-dashboard.sh
-#   chmod 700 deploy-dashboard.sh
+#   cp deploy-dashboard.sh.example ha_dashboard_sync.sh
+#   chmod 700 ha_dashboard_sync.sh
+#   cp .ha.env.example .ha.env && chmod 600 .ha.env
+#   # HA_TOKEN: Long-lived access token (HA → Profil → Sicherheit)
+#   # HA_URL:   http://localhost:8123
 #
 # Cron (alle 15 Minuten):
-#   */15 * * * * /home/stefan/docker/scripts/deploy-dashboard.sh >> /home/stefan/docker/logs/deploy-dashboard.log 2>&1
+#   */15 * * * * /home/stefan/docker/scripts/ha_dashboard_sync.sh >> /home/stefan/docker/logs/ha_dashboard_sync.log 2>&1
 #
 # Voraussetzung: lovelace-Eintrag in configuration.yaml (siehe configuration.yaml.example)
 # =============================================================================
 
 set -euo pipefail
 
-REPO_DIR="/home/stefan/docker"
-DASHBOARD_SRC="$REPO_DIR/homeassistant.k3s/dashboards/backup-k3s.yaml"
-DASHBOARD_DST="$REPO_DIR/homeassistant/homeassistant/config/dashboards/homelab.yaml"
+echo "HA dashboard sync started at $(date --iso-8601=ns)"
 
-echo "[$(date --iso-8601=seconds)] Pulling repo..."
-git -C "$REPO_DIR" pull --ff-only --quiet
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/.ha.env"
 
-echo "[$(date --iso-8601=seconds)] Deploying dashboard..."
+if [[ ! -f "$ENV_FILE" ]]; then
+    echo "ERROR: $ENV_FILE not found" >&2
+    exit 1
+fi
+if [[ "$(stat -c %a "$ENV_FILE")" != "600" ]]; then
+    echo "WARNING: Insecure permissions on $ENV_FILE" >&2
+fi
+source "$ENV_FILE"
+
+echo "Pulling latest changes..."
+git -C ~/docker pull --ff-only
+
+echo "Deploying dashboard..."
+DASHBOARD_SRC=~/docker/homeassistant.k3s/dashboards/backup-k3s.yaml
+DASHBOARD_DST=~/docker/homeassistant/homeassistant/config/dashboards/backup-k3s.yaml
 mkdir -p "$(dirname "$DASHBOARD_DST")"
 cp "$DASHBOARD_SRC" "$DASHBOARD_DST"
 
-echo "[$(date --iso-8601=seconds)] Reloading lovelace..."
-docker exec homeassistant ha lovelace reload
+echo "Reloading Home Assistant config..."
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+    -X POST "${HA_URL}/api/services/homeassistant/reload_all" \
+    -H "Authorization: Bearer ${HA_TOKEN}" \
+    -H "Content-Type: application/json")
 
-echo "[$(date --iso-8601=seconds)] Done."
+if [[ "$HTTP_CODE" == "200" ]]; then
+    echo "Reload successful."
+else
+    echo "ERROR: HA reload returned HTTP $HTTP_CODE" >&2
+    exit 1
+fi
+
+echo "HA dashboard sync finished at $(date --iso-8601=ns)"
