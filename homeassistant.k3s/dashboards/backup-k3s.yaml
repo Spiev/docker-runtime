@@ -7,90 +7,48 @@ views:
         cards:
           - type: entity
             entity: sensor.backup_overall_status
-            name: Backup k3s — Gesamt
+            name: k3s Backup
             icon: mdi:backup-restore
             state_color: true
           - type: markdown
-            title: Letzter Lauf
             content: >
               | | |
 
               |---|---|
 
-              | **Zeitpunkt** | {% set t = state_attr('sensor.backup_overall_status',
+              | **Letzter Lauf** | {% set t = state_attr('sensor.backup_overall_status',
               'last_run') %}{{ t | as_datetime | relative_time if t else '—' }} |
 
               | **Dauer** | {{ state_attr('sensor.backup_overall_status',
               'duration_seconds') | default('—') }}s |
 
-              | **Aktive Services** | {{ state_attr('sensor.backup_overall_status',
-              'active_services') | default('—') }} |
-
-          - type: markdown
-            title: Repository (Hetzner S3)
-            content: >
-              | | |
-
-              |---|---|
-
-              | **Größe** | {{ state_attr('sensor.backup_overall_status',
+              | **Repo-Größe** | {{ state_attr('sensor.backup_overall_status',
               'repository_size_gb') | default('—') }} GB |
 
-              | **Snapshots** | {{ state_attr('sensor.backup_overall_status',
+              | **Snapshots gesamt** | {{ state_attr('sensor.backup_overall_status',
               'snapshot_count') | default('—') }} |
 
-      - type: vertical-stack
-        cards:
-          - type: entity
-            entity: sensor.backup_teslamate_status
-            name: Teslamate
-            icon: mdi:car-electric
-            state_color: true
-          - type: markdown
-            content: >
-              | | |
+      - type: markdown
+        title: Details pro Service
+        content: >
+          | Service | Neue Dateien | Geändert | Snapshots |
 
-              |---|---|
+          |---|---|---|---|
 
-              | **Neue Dateien** | {{ state_attr('sensor.backup_teslamate_status',
-              'files_new') | default('—') }} |
+          | **Paperless** | {{ state_attr('sensor.backup_paperless_ngx',
+          'files_new') | default('—') }} | {{ state_attr('sensor.backup_paperless_ngx',
+          'files_changed') | default('—') }} | {{ state_attr('sensor.backup_paperless_ngx',
+          'snapshot_count') | default('—') }} |
 
-              | **Geänderte Dateien** | {{ state_attr('sensor.backup_teslamate_status',
-              'files_changed') | default('—') }} |
+          | **Seafile** | {{ state_attr('sensor.backup_seafile_status',
+          'files_new') | default('—') }} | {{ state_attr('sensor.backup_seafile_status',
+          'files_changed') | default('—') }} | {{ state_attr('sensor.backup_seafile_status',
+          'snapshot_count') | default('—') }} |
 
-          - type: entity
-            entity: sensor.backup_seafile_status
-            name: Seafile
-            icon: mdi:file-arrow-up-down-outline
-            state_color: true
-          - type: markdown
-            content: >
-              | | |
-
-              |---|---|
-
-              | **Neue Dateien** | {{ state_attr('sensor.backup_seafile_status',
-              'files_new') | default('—') }} |
-
-              | **Geänderte Dateien** | {{ state_attr('sensor.backup_seafile_status',
-              'files_changed') | default('—') }} |
-
-          - type: entity
-            entity: sensor.backup_paperless_ngx
-            name: Paperless
-            icon: mdi:newspaper
-            state_color: true
-          - type: markdown
-            content: >
-              | | |
-
-              |---|---|
-
-              | **Neue Dateien** | {{ state_attr('sensor.backup_paperless_ngx',
-              'files_new') | default('—') }} |
-
-              | **Geänderte Dateien** | {{ state_attr('sensor.backup_paperless_ngx',
-              'files_changed') | default('—') }} |
+          | **Teslamate** | {{ state_attr('sensor.backup_teslamate_status',
+          'files_new') | default('—') }} | {{ state_attr('sensor.backup_teslamate_status',
+          'files_changed') | default('—') }} | {{ state_attr('sensor.backup_teslamate_status',
+          'snapshot_count') | default('—') }} |
 
       - type: logbook
         title: Backup-Verlauf
@@ -98,6 +56,3 @@ views:
         target:
           entity_id:
             - sensor.backup_overall_status
-            - sensor.backup_teslamate_status
-            - sensor.backup_seafile_status
-            - sensor.backup_paperless_ngx
