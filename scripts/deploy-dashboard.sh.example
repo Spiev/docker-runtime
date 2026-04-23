@@ -1,0 +1,35 @@
+#!/bin/bash
+# =============================================================================
+# Dashboard Deploy Script
+# =============================================================================
+# Zieht aktuelle Dashboard-YAML aus dem Git-Repo und kopiert sie
+# in das Home Assistant Config-Verzeichnis. HA liest die Datei direkt
+# (YAML-Mode Dashboard) — kein manueller Import nötig.
+#
+# Setup:
+#   cp deploy-dashboard.sh.example deploy-dashboard.sh
+#   chmod 700 deploy-dashboard.sh
+#
+# Cron (alle 15 Minuten):
+#   */15 * * * * /home/stefan/docker/scripts/deploy-dashboard.sh >> /home/stefan/docker/logs/deploy-dashboard.log 2>&1
+#
+# Voraussetzung: lovelace-Eintrag in configuration.yaml (siehe configuration.yaml.example)
+# =============================================================================
+
+set -euo pipefail
+
+REPO_DIR="/home/stefan/docker"
+DASHBOARD_SRC="$REPO_DIR/homeassistant.k3s/dashboards/backup-k3s.yaml"
+DASHBOARD_DST="$REPO_DIR/homeassistant/homeassistant/config/dashboards/homelab.yaml"
+
+echo "[$(date --iso-8601=seconds)] Pulling repo..."
+git -C "$REPO_DIR" pull --ff-only --quiet
+
+echo "[$(date --iso-8601=seconds)] Deploying dashboard..."
+mkdir -p "$(dirname "$DASHBOARD_DST")"
+cp "$DASHBOARD_SRC" "$DASHBOARD_DST"
+
+echo "[$(date --iso-8601=seconds)] Reloading lovelace..."
+docker exec homeassistant ha lovelace reload
+
+echo "[$(date --iso-8601=seconds)] Done."

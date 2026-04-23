@@ -88,6 +88,20 @@ http:
   login_attempts_threshold: 5
 
 # =============================================================================
+# Lovelace Dashboards (YAML-Mode)
+# =============================================================================
+# Dashboards im YAML-Mode werden als Dateien im Config-Verzeichnis gespeichert
+# und via deploy-dashboard.sh.example automatisch aus dem Git-Repo aktualisiert.
+lovelace:
+  dashboards:
+    homelab:
+      mode: yaml
+      filename: dashboards/homelab.yaml
+      title: Homelab
+      icon: mdi:home
+      show_in_sidebar: true
+
+# =============================================================================
 # Logging
 # =============================================================================
 logger:

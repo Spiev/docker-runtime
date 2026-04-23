@@ -8,10 +8,44 @@ Dieser Ordner enthält HA-Konfiguration und Dashboards die zur k3s-Infrastruktur
 
 | Datei | Inhalt |
 |---|---|
-| [backup-k3s.yaml](dashboards/backup-k3s.yaml) | Backup-Status für k3s-Services (Restic → Hetzner S3) |
+| [dashboards/backup-k3s.yaml](dashboards/backup-k3s.yaml) | Homelab-Dashboard: Hardware, Backup Pi1, Backup k3s, Services |
 
-### Dashboard importieren
+Das Dashboard lebt im Code — Änderungen im Repo werden automatisch via Cron in HA übernommen.
 
-In Home Assistant: **Settings → Dashboards → Add Dashboard → YAML-Modus** — Inhalt der jeweiligen Datei einfügen.
+### Einmalig: HA konfigurieren
 
-Sensoren erscheinen automatisch via MQTT Discovery nach dem ersten Backup-Lauf.
+**1. Lovelace-Eintrag in `configuration.yaml` ergänzen** (siehe `configuration.yaml.example`):
+
+```yaml
+lovelace:
+  dashboards:
+    homelab:
+      mode: yaml
+      filename: dashboards/homelab.yaml
+      title: Homelab
+      icon: mdi:home
+      show_in_sidebar: true
+```
+
+**2. Deploy-Script einrichten:**
+
+```bash
+cd ~/docker/scripts
+cp deploy-dashboard.sh.example deploy-dashboard.sh
+chmod 700 deploy-dashboard.sh
+```
+
+**3. Cron einrichten** (`crontab -e`):
+
+```
+*/15 * * * * /home/stefan/docker/scripts/deploy-dashboard.sh >> /home/stefan/docker/logs/deploy-dashboard.log 2>&1
+```
+
+**4. Manuell einmalig ausführen:**
+
+```bash
+mkdir -p ~/docker/logs
+~/docker/scripts/deploy-dashboard.sh
+```
+
+Danach erscheint "Homelab" in der HA-Sidebar. Sensoren erscheinen automatisch via MQTT Discovery nach dem ersten Backup-Lauf.

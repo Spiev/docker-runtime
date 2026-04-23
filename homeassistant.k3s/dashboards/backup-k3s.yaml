@@ -1,5 +1,122 @@
-title: Backup k3s
+title: Homelab
 views:
+
+  # ===========================================================================
+  # HARDWARE
+  # ===========================================================================
+  - title: Hardware
+    type: sections
+    cards: []
+    sections:
+      - type: grid
+        cards:
+          - type: entities
+            title: System Monitor PI 1
+            entities:
+              - entity: sensor.system_monitor_processor_temperature
+                name: Prozessortemperatur
+              - entity: sensor.system_monitor_processor_use
+                name: Prozessornutzung
+              - entity: sensor.pi5_fan_speed
+              - entity: sensor.system_monitor_swap_usage
+                name: Swap-Auslastung
+              - entity: sensor.system_monitor_memory_usage
+                name: Arbeitsspeicherauslastung
+              - entity: sensor.system_monitor_network_throughput_out_eth0
+                name: Ausgehender Netzwerkdurchsatz eth0
+              - entity: sensor.system_monitor_network_throughput_in_eth0
+                name: Eingehender Netzwerkdurchsatz eth0
+              - entity: sensor.system_monitor_disk_free
+                name: Freier Massenspeicher /
+              - entity: sensor.system_monitor_last_boot
+                name: Letzter Systemstart
+      - type: grid
+        cards:
+          - type: entities
+            title: System Monitor PI 2
+            entities:
+              - entity: sensor.k3s_cpu_temp
+                name: Prozessortemperatur
+              - entity: sensor.k3s_cpu_usage
+                name: Prozessornutzung
+              - entity: sensor.k3s_fan_rpm
+              - entity: sensor.k3s_ram_usage
+                name: Arbeitsspeicherauslastung
+              - entity: sensor.k3s_disk_free_gb
+                name: Freier Massenspeicher /
+              - entity: sensor.k3s_nvme_temp
+                name: nvme Temperatur
+              - entity: sensor.k3s_last_boot
+                name: Letzter Systemstart
+
+  # ===========================================================================
+  # BACKUP PI1 (Docker-runtime: Immich, Home Assistant)
+  # ===========================================================================
+  - title: Backup Pi1
+    path: backup-pi1
+    type: masonry
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: entity
+            entity: sensor.restic_backup_status
+            name: Backup Status Pi1
+            icon: mdi:backup-restore
+            state_color: true
+          - type: markdown
+            title: Letzter Backup
+            content: >
+              | | |
+
+              |---|---|
+
+              | **Letzter Lauf** | {{ state_attr('sensor.restic_backup_status',
+              'last_run') | as_datetime | relative_time }} |
+
+              | **Dauer** | {{ state_attr('sensor.restic_backup_status',
+              'duration_seconds') }}s |
+
+              | **S3 Status** | {{ state_attr('sensor.restic_backup_status',
+              's3_status') }} |
+      - type: markdown
+        title: Repository
+        content: >
+          | | **Lokal (SSD)** | **S3** |
+
+          |---|---|---|
+
+          | **Größe** | {{ state_attr('sensor.restic_backup_status',
+          'repository_size_gb') }} GB | {{
+          state_attr('sensor.restic_backup_status', 's3_repository_size_gb') }}
+          GB |
+
+          | **Snapshots** | {{ state_attr('sensor.restic_backup_status',
+          'snapshot_count') }} | {{ state_attr('sensor.restic_backup_status',
+          's3_snapshot_count') }} |
+      - type: markdown
+        title: Details pro Service
+        content: >
+          | Service | Neue Dateien | Geändert |
+
+          |---------|-------------|----------|
+
+          | Immich | {{ state_attr('sensor.restic_backup_status',
+          'immich_files_new') }} | {{ state_attr('sensor.restic_backup_status',
+          'immich_files_changed') }} |
+
+          | Home Assistant | {{ state_attr('sensor.restic_backup_status',
+          'homeassistant_files_new') }} | {{
+          state_attr('sensor.restic_backup_status',
+          'homeassistant_files_changed') }} |
+      - type: logbook
+        title: Backup-Verlauf
+        entities:
+          - sensor.restic_backup_status
+        hours_to_show: 168
+
+  # ===========================================================================
+  # BACKUP K3S (Paperless, Seafile, Teslamate)
+  # ===========================================================================
   - title: Backup k3s
     type: masonry
     cards:
@@ -56,3 +173,97 @@ views:
         target:
           entity_id:
             - sensor.backup_overall_status
+            - sensor.backup_teslamate_status
+            - sensor.backup_seafile_status
+            - sensor.backup_paperless_ngx
+
+  # ===========================================================================
+  # SERVICES
+  # ===========================================================================
+  - title: Services
+    type: sections
+    max_columns: 4
+    cards: []
+    sections:
+      - type: grid
+        cards:
+          - type: entities
+            title: 🖥️ RaspberryPi Updates
+            entities:
+              - entity: sensor.rpi_system_updates
+                name: System-Updates
+              - entity: sensor.rpi_eeprom_status
+                name: EEPROM Firmware
+                state_color: true
+          - type: entities
+            title: Pi-Hole
+            entities:
+              - entity: update.pi_hole_core_update_verfugbar
+                name: Core-Update verfügbar
+              - entity: update.pi_hole_ftl_update_verfugbar
+                name: FTL-Update verfügbar
+              - entity: update.pi_hole_web_update_verfugbar
+                name: Web-Update verfügbar
+          - type: entities
+            title: 🧱 Nginx Rev-Proxy
+            entities:
+              - entity: sensor.nginx_version
+                name: Version
+                icon: mdi:diversify
+              - entity: sensor.nginx_update_status_2
+                name: Status
+                icon: mdi:timer
+              - entity: sensor.nginx_last_check
+                attribute: last_run
+                name: Check Time
+                icon: mdi:calendar-check
+      - type: grid
+        cards:
+          - type: entities
+            title: Home Assistant Version
+            entities:
+              - entity: binary_sensor.docker_hub_update_available
+                name: Update verfügbar
+              - entity: sensor.docker_hub
+          - type: entities
+            title: Fotobibliothek
+            entities:
+              - entity: update.stefan_version
+                name: Software Version
+          - type: entities
+            title: Paperless
+            entities:
+              - entity: update.http_192_168_178_113_8000_software
+                name: Software Version
+              - entity: sensor.http_192_168_178_113_8000_datenbank_status
+                name: Datenbank-Status
+              - entity: sensor.http_192_168_178_113_8000_plausibilitatsstatus
+                name: Plausibilitätsstatus
+              - entity: sensor.http_192_168_178_113_8000_redis_status
+                name: Redis-Status
+              - entity: sensor.http_192_168_178_113_8000_dokumente_im_posteingang
+      - type: grid
+        cards:
+          - type: entities
+            title: 🖥️ K3s Updates
+            entities:
+              - entity: sensor.k3s_server_node_system_updates
+                name: System-Updates
+              - entity: sensor.k3s_server_node_eeprom_status
+                name: EEPROM Firmware
+                state_color: true
+          - type: entities
+            title: ☸️  k8s Services
+            entities:
+              - entity: sensor.k3s_unbound_pvcs
+                name: Unbound PVCs
+              - entity: sensor.k3s_unhealthy_pods
+                name: Unhealthy Pods
+              - entity: binary_sensor.k3s_server_node_flux_ready
+                name: Flux Ready
+              - entity: sensor.k3s_server_node_flux_git_fetched_at
+                name: Flux Git Fetched At
+              - entity: sensor.k3s_server_node_flux_git_revision
+                name: Flux Git Revision
+              - entity: sensor.k3s_server_node_flux_applied_revision
+                name: Flux Applied Revision

@@ -2,10 +2,8 @@
 # Restic Backup Dashboard für Home Assistant
 # =============================================================================
 # Zeigt den Backup-Status beider Systeme:
-#   Docker-runtime (Pi1): sensor.restic_backup_status  — Immich, HA, Paperless*, Teslamate*
-#   k3s (Pi1/Pi2):        sensor.backup_*              — Paperless, Teslamate (nach Migration)
-#
-# * Zeile entfernen sobald der Service zu k3s migriert ist.
+#   Docker-runtime (Pi1): sensor.restic_backup_status  — Immich, HA
+#   k3s (Pi2):            sensor.backup_*              — Paperless, Seafile, Teslamate
 #
 # Sensoren werden automatisch via MQTT Discovery erstellt — kein manueller
 # Eintrag in mqtt.yaml nötig. Erscheinen nach dem ersten Backup-Lauf.
@@ -26,17 +24,17 @@ views:
     cards:
 
       # =================================================================
-      # DOCKER-RUNTIME (Immich, Home Assistant, + Services vor Migration)
+      # DOCKER-RUNTIME Pi1 (Immich, Home Assistant)
       # =================================================================
 
       - type: vertical-stack
         cards:
           - type: markdown
-            content: "## Docker-runtime"
+            content: "## Docker-runtime (Pi1)"
 
           - type: entity
             entity: sensor.restic_backup_status
-            name: Backup Status
+            name: Backup Status Pi1
             icon: mdi:backup-restore
             state_color: true
 
@@ -50,7 +48,7 @@ views:
               | **S3 Status** | {{ state_attr('sensor.restic_backup_status', 's3_status') }} |
 
       - type: markdown
-        title: Repository (Docker-runtime)
+        title: Repository (Pi1)
         content: |
           | | **Lokal (SSD)** | **S3** |
           |---|---|---|
@@ -58,23 +56,21 @@ views:
           | **Snapshots** | {{ state_attr('sensor.restic_backup_status', 'snapshot_count') }} | {{ state_attr('sensor.restic_backup_status', 's3_snapshot_count') }} |
 
       - type: markdown
-        title: Details pro Service (Docker-runtime)
+        title: Details pro Service (Pi1)
         content: |
           | Service | Neue Dateien | Geändert |
           |---------|-------------|----------|
           | Immich | {{ state_attr('sensor.restic_backup_status', 'immich_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'immich_files_changed') }} |
           | Home Assistant | {{ state_attr('sensor.restic_backup_status', 'homeassistant_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'homeassistant_files_changed') }} |
-          | Paperless* | {{ state_attr('sensor.restic_backup_status', 'paperless_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'paperless_files_changed') }} |
-          | Teslamate* | {{ state_attr('sensor.restic_backup_status', 'teslamate_files_new') }} | {{ state_attr('sensor.restic_backup_status', 'teslamate_files_changed') }} |
 
       # =================================================================
-      # K3S (Paperless, Teslamate — nach Migration aktiv)
+      # K3S Pi2 (Paperless, Seafile, Teslamate)
       # =================================================================
 
       - type: vertical-stack
         cards:
           - type: markdown
-            content: "## k3s"
+            content: "## k3s (Pi2)"
 
           - type: entity
             entity: sensor.backup_overall
@@ -88,35 +84,18 @@ views:
               | | |
               |---|---|
               | **Letzter Lauf** | {{ state_attr('sensor.backup_overall', 'last_run') | as_datetime | relative_time }} |
-              | **Letzter Erfolg** | {{ state_attr('sensor.backup_overall', 'last_success_time') | as_datetime | relative_time }} |
               | **Dauer** | {{ state_attr('sensor.backup_overall', 'duration_seconds') }}s |
-
-      - type: markdown
-        title: Repository (k3s S3)
-        content: |
-          | | |
-          |---|---|
-          | **Größe** | {{ state_attr('sensor.backup_overall', 'repository_size_gb') }} GB |
-          | **Snapshots** | {{ state_attr('sensor.backup_overall', 'snapshot_count') }} |
-          | **Aktive Services** | {{ state_attr('sensor.backup_overall', 'active_services') }} |
-
-      - type: entities
-        title: Status pro Service (k3s)
-        entities:
-          - entity: sensor.backup_paperless
-            name: Paperless-ngx
-            icon: mdi:file-document
-          - entity: sensor.backup_teslamate
-            name: Teslamate
-            icon: mdi:car-electric
+              | **Repo-Größe** | {{ state_attr('sensor.backup_overall', 'repository_size_gb') }} GB |
+              | **Snapshots gesamt** | {{ state_attr('sensor.backup_overall', 'snapshot_count') }} |
 
       - type: markdown
         title: Details pro Service (k3s)
         content: |
-          | Service | Neue Dateien | Geändert | Letzter Lauf |
-          |---------|-------------|----------|--------------|
-          | Paperless | {{ state_attr('sensor.backup_paperless', 'files_new') }} | {{ state_attr('sensor.backup_paperless', 'files_changed') }} | {{ state_attr('sensor.backup_paperless', 'last_run') | as_datetime | relative_time }} |
-          | Teslamate | {{ state_attr('sensor.backup_teslamate', 'files_new') }} | {{ state_attr('sensor.backup_teslamate', 'files_changed') }} | {{ state_attr('sensor.backup_teslamate', 'last_run') | as_datetime | relative_time }} |
+          | Service | Neue Dateien | Geändert | Snapshots |
+          |---------|-------------|----------|-----------|
+          | Paperless | {{ state_attr('sensor.backup_paperless', 'files_new') }} | {{ state_attr('sensor.backup_paperless', 'files_changed') }} | {{ state_attr('sensor.backup_paperless', 'snapshot_count') }} |
+          | Seafile | {{ state_attr('sensor.backup_seafile', 'files_new') }} | {{ state_attr('sensor.backup_seafile', 'files_changed') }} | {{ state_attr('sensor.backup_seafile', 'snapshot_count') }} |
+          | Teslamate | {{ state_attr('sensor.backup_teslamate', 'files_new') }} | {{ state_attr('sensor.backup_teslamate', 'files_changed') }} | {{ state_attr('sensor.backup_teslamate', 'snapshot_count') }} |
 
       # =================================================================
       # VERLAUF (alle Sensoren)
@@ -128,5 +107,6 @@ views:
           - sensor.restic_backup_status
           - sensor.backup_overall
           - sensor.backup_paperless
+          - sensor.backup_seafile
           - sensor.backup_teslamate
         hours_to_show: 168  # 7 Tage
