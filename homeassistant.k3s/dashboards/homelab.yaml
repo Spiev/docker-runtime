@@ -178,6 +178,125 @@ views:
             - sensor.backup_paperless_ngx
 
   # ===========================================================================
+  # NETZWERK
+  # ===========================================================================
+  - title: Netzwerk
+    path: netzwerk
+    type: sections
+    cards: []
+    header:
+      card:
+        type: markdown
+        text_only: true
+        content: |-
+          # Hallo {{ user }}
+          Hier siehst Du den Status Deiner Netzwerkgeräte
+    sections:
+      - type: grid
+        cards:
+          - type: entities
+            title: FRITZ!Box 7590 AX
+            entities:
+              - entity: update.fritz_box_7590_ax_fritz_os
+              - entity: sensor.fritz_box_7590_ax_cpu_temperatur
+              - entity: sensor.fritz_box_7590_ax_connection_uptime
+                name: Verbindungsverfügbarkeit
+              - entity: sensor.fritz_box_7590_ax_link_download_throughput
+                name: Link-Download-Durchsatz
+              - entity: sensor.fritz_box_7590_ax_link_upload_throughput
+                name: Link-Upload-Durchsatz
+              - entity: sensor.fritz_box_7590_ax_download_speed
+              - entity: sensor.fritz_box_7590_ax_upload_speed
+              - entity: sensor.fritz_box_7590_ax_last_restart
+                name: Letzter Neustart
+          - type: entities
+            title: FRITZ!Powerline 1260
+            entities:
+              - entity: update.fritz_powerline_1260_fritz_os
+                name: FRITZ!OS
+              - entity: sensor.fritz_powerline_1260_cpu_temperatur
+              - entity: sensor.fritz_powerline_1260_letzter_neustart
+      - type: grid
+        cards:
+          - type: entities
+            entities:
+              - entity: sensor.photos_webserver_monitor
+              - entity: sensor.paperless_webserver_monitor
+          - type: entities
+            title: FritzBox WAN
+            entities:
+              - entity: binary_sensor.ypbpmx2q8pofnv6f_myfritz_net
+                name: Fritzbox WAN Interface
+              - entity: sensor.ypbpmx2q8pofnv6f_myfritz_net_durchschnittliche_umlaufzeit
+                name: Durchschnittliche Umlaufzeit
+              - entity: sensor.ypbpmx2q8pofnv6f_myfritz_net_jitter
+                name: Jitter
+              - entity: sensor.ypbpmx2q8pofnv6f_myfritz_net_minimale_umlaufzeit
+                name: Minimale Umlaufzeit
+              - entity: sensor.ypbpmx2q8pofnv6f_myfritz_net_maximale_umlaufzeit
+                name: Maximale Umlaufzeit
+          - type: entities
+            title: Google DNS2
+            entities:
+              - entity: binary_sensor.8_8_4_4
+                title: Google DNS2
+              - entity: sensor.8_8_4_4_durchschnittliche_umlaufzeit
+                name: Durchschnittliche Umlaufzeit
+              - entity: sensor.8_8_4_4_jitter
+                name: Jitter
+              - entity: sensor.8_8_4_4_maximale_umlaufzeit
+                name: Maximale Umlaufzeit
+              - entity: sensor.8_8_4_4_minimale_umlaufzeit
+                name: Minimale Umlaufzeit
+      - type: grid
+        cards:
+          - type: entities
+            title: Pi-Hole
+            entities:
+              - entity: binary_sensor.pi_hole_status
+                name: Status
+              - entity: sensor.pi_hole_anteil_blockierter_anzeigen
+                name: Anteil blockierter Anzeigen
+              - entity: sensor.pi_hole_blockierte_anzeigen
+                name: Blockierte Anzeigen
+              - entity: sensor.pi_hole_blockierte_domains
+                name: Blockierte Domains
+              - entity: sensor.pi_hole_dns_abfragen
+                name: DNS-Abfragen
+              - entity: sensor.pi_hole_dns_abfragen_weitergeleitet
+                name: DNS-Abfragen weitergeleitet
+              - entity: sensor.pi_hole_dns_abfragen_zwischengespeichert
+                name: DNS-Abfragen zwischengespeichert
+              - entity: sensor.pi_hole_eindeutige_dns_clients
+                name: Eindeutige DNS-Clients
+              - entity: sensor.pi_hole_eindeutige_dns_domains
+                name: Eindeutige DNS-Domains
+              - entity: sensor.pi_hole_gesehene_clients
+                name: Gesehene Clients
+              - entity: sensor.pi_hole_dns_latency_ipv4
+                name: DNS Latenz (ipv4) heise.de
+              - entity: sensor.pi_hole_dns_latency_ipv6
+                name: DNS Latenz (ipv6) heise.de
+      - type: grid
+        cards:
+          - type: entities
+            title: Haustüre
+            entities:
+              - entity: sensor.vordereingang_batterie
+                name: Batterie
+          - type: entities
+            title: Wohnungstüre
+            entities:
+              - entity: sensor.wohnungsture_battery
+                name: Battery
+              - entity: binary_sensor.wohnungsture_battery_charging
+                name: Battery charging
+              - entity: binary_sensor.wohnungsture_battery_critical
+                name: Battery critical
+              - entity: sensor.wohnungsture_firmware_version
+                name: Firmware version
+
+  # ===========================================================================
   # SERVICES
   # ===========================================================================
   - title: Services
