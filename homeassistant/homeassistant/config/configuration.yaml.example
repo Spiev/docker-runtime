@@ -94,7 +94,7 @@ http:
 # und via deploy-dashboard.sh.example automatisch aus dem Git-Repo aktualisiert.
 lovelace:
   dashboards:
-    homelab:
+    homelab-dashboard:
       mode: yaml
       filename: dashboards/homelab.yaml
       title: Homelab
