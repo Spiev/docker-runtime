@@ -38,8 +38,8 @@ echo "Pulling latest changes..."
 git -C ~/docker pull --ff-only
 
 echo "Deploying dashboard..."
-DASHBOARD_SRC=~/docker/homeassistant.k3s/dashboards/backup-k3s.yaml
-DASHBOARD_DST=~/docker/homeassistant/homeassistant/config/dashboards/backup-k3s.yaml
+DASHBOARD_SRC=~/docker/homeassistant.k3s/dashboards/homelab.yaml
+DASHBOARD_DST=~/docker/homeassistant/homeassistant/config/dashboards/homelab.yaml
 mkdir -p "$(dirname "$DASHBOARD_DST")"
 cp "$DASHBOARD_SRC" "$DASHBOARD_DST"
 
