@@ -177,10 +177,6 @@ views:
     path: netzwerk
     type: sections
     cards: []
-    header:
-      card:
-        type: markdown
-        text_only: true
     sections:
       - type: grid
         cards:
