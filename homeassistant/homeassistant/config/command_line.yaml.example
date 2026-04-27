@@ -22,20 +22,7 @@
 # -----------------------------------------------------------------------------
 # Webserver Monitoring
 # -----------------------------------------------------------------------------
-# Prüft ob die externen Dienste erreichbar sind
-# Ersetze die Domains mit deinen eigenen
-
-- sensor:
-    name: Photos Webserver Monitor
-    unique_id: photos_webserver_monitor
-    command: 'curl -s https://YOUR_PHOTOS_DOMAIN/api/server/ping | grep "pong" > /dev/null && echo "up" || echo "down!"'
-    scan_interval: 60
-
-- sensor:
-    name: Paperless Webserver Monitor
-    unique_id: paperless_webserver_monitor
-    command: 'curl -sI https://YOUR_PAPERLESS_DOMAIN/accounts/login/ | grep "HTTP/1.1 200 OK" > /dev/null && echo "up" || echo "down!"'
-    scan_interval: 60
+# Ist via uptimerobot gelöst, daher hier entfernt
 
 # -----------------------------------------------------------------------------
 # DNS Monitoring (Pi-hole auf k3s)
