@@ -17,14 +17,8 @@ views:
               - entity: sensor.system_monitor_processor_use
                 name: Prozessornutzung
               - entity: sensor.pi5_fan_speed
-              - entity: sensor.system_monitor_swap_usage
-                name: Swap-Auslastung
               - entity: sensor.system_monitor_memory_usage
                 name: Arbeitsspeicherauslastung
-              - entity: sensor.system_monitor_network_throughput_out_eth0
-                name: Ausgehender Netzwerkdurchsatz eth0
-              - entity: sensor.system_monitor_network_throughput_in_eth0
-                name: Eingehender Netzwerkdurchsatz eth0
               - entity: sensor.system_monitor_disk_free
                 name: Freier Massenspeicher /
               - entity: sensor.system_monitor_last_boot
