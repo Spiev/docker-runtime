@@ -43,13 +43,15 @@ views:
                 name: Letzter Systemstart
 
   # ===========================================================================
-  # BACKUP PI1 (Docker-runtime: Immich, Home Assistant)
+  # BACKUP (Pi1 + k3s)
   # ===========================================================================
-  - title: Backup Pi1
-    path: backup-pi1
-    type: masonry
-    cards:
-      - type: vertical-stack
+  - title: Backup
+    path: backup
+    type: sections
+    cards: []
+    sections:
+      - type: grid
+        title: Pi1
         cards:
           - type: entity
             entity: sensor.restic_backup_status
@@ -71,49 +73,43 @@ views:
 
               | **S3 Status** | {{ state_attr('sensor.restic_backup_status',
               's3_status') }} |
-      - type: markdown
-        title: Repository
-        content: >
-          | | **Lokal (SSD)** | **S3** |
+          - type: markdown
+            title: Repository
+            content: >
+              | | **Lokal (SSD)** | **S3** |
 
-          |---|---|---|
+              |---|---|---|
 
-          | **Größe** | {{ state_attr('sensor.restic_backup_status',
-          'repository_size_gb') }} GB | {{
-          state_attr('sensor.restic_backup_status', 's3_repository_size_gb') }}
-          GB |
+              | **Größe** | {{ state_attr('sensor.restic_backup_status',
+              'repository_size_gb') }} GB | {{
+              state_attr('sensor.restic_backup_status', 's3_repository_size_gb') }}
+              GB |
 
-          | **Snapshots** | {{ state_attr('sensor.restic_backup_status',
-          'snapshot_count') }} | {{ state_attr('sensor.restic_backup_status',
-          's3_snapshot_count') }} |
-      - type: markdown
-        title: Details pro Service
-        content: >
-          | Service | Neue Dateien | Geändert |
+              | **Snapshots** | {{ state_attr('sensor.restic_backup_status',
+              'snapshot_count') }} | {{ state_attr('sensor.restic_backup_status',
+              's3_snapshot_count') }} |
+          - type: markdown
+            title: Details pro Service
+            content: >
+              | Service | Neue Dateien | Geändert |
 
-          |---------|-------------|----------|
+              |---------|-------------|----------|
 
-          | Immich | {{ state_attr('sensor.restic_backup_status',
-          'immich_files_new') }} | {{ state_attr('sensor.restic_backup_status',
-          'immich_files_changed') }} |
+              | Immich | {{ state_attr('sensor.restic_backup_status',
+              'immich_files_new') }} | {{ state_attr('sensor.restic_backup_status',
+              'immich_files_changed') }} |
 
-          | Home Assistant | {{ state_attr('sensor.restic_backup_status',
-          'homeassistant_files_new') }} | {{
-          state_attr('sensor.restic_backup_status',
-          'homeassistant_files_changed') }} |
-      - type: logbook
-        title: Backup-Verlauf
-        entities:
-          - sensor.restic_backup_status
-        hours_to_show: 168
-
-  # ===========================================================================
-  # BACKUP K3S (Paperless, Seafile, Teslamate)
-  # ===========================================================================
-  - title: Backup k3s
-    type: masonry
-    cards:
-      - type: vertical-stack
+              | Home Assistant | {{ state_attr('sensor.restic_backup_status',
+              'homeassistant_files_new') }} | {{
+              state_attr('sensor.restic_backup_status',
+              'homeassistant_files_changed') }} |
+          - type: logbook
+            title: Backup-Verlauf Pi1
+            entities:
+              - sensor.restic_backup_status
+            hours_to_show: 168
+      - type: grid
+        title: k3s
         cards:
           - type: entity
             entity: sensor.backup_overall_status
@@ -121,6 +117,7 @@ views:
             icon: mdi:backup-restore
             state_color: true
           - type: markdown
+            title: Letzter Backup
             content: >
               | | |
 
@@ -137,38 +134,36 @@ views:
 
               | **Snapshots gesamt** | {{ state_attr('sensor.backup_overall_status',
               'snapshot_count') | default('—') }} |
+          - type: markdown
+            title: Details pro Service
+            content: >
+              | Service | Neue Dateien | Geändert | Snapshots |
 
-      - type: markdown
-        title: Details pro Service
-        content: >
-          | Service | Neue Dateien | Geändert | Snapshots |
+              |---|---|---|---|
 
-          |---|---|---|---|
+              | **Paperless** | {{ state_attr('sensor.backup_paperless_ngx',
+              'files_new') | default('—') }} | {{ state_attr('sensor.backup_paperless_ngx',
+              'files_changed') | default('—') }} | {{ state_attr('sensor.backup_paperless_ngx',
+              'snapshot_count') | default('—') }} |
 
-          | **Paperless** | {{ state_attr('sensor.backup_paperless_ngx',
-          'files_new') | default('—') }} | {{ state_attr('sensor.backup_paperless_ngx',
-          'files_changed') | default('—') }} | {{ state_attr('sensor.backup_paperless_ngx',
-          'snapshot_count') | default('—') }} |
+              | **Seafile** | {{ state_attr('sensor.backup_seafile_status',
+              'files_new') | default('—') }} | {{ state_attr('sensor.backup_seafile_status',
+              'files_changed') | default('—') }} | {{ state_attr('sensor.backup_seafile_status',
+              'snapshot_count') | default('—') }} |
 
-          | **Seafile** | {{ state_attr('sensor.backup_seafile_status',
-          'files_new') | default('—') }} | {{ state_attr('sensor.backup_seafile_status',
-          'files_changed') | default('—') }} | {{ state_attr('sensor.backup_seafile_status',
-          'snapshot_count') | default('—') }} |
-
-          | **Teslamate** | {{ state_attr('sensor.backup_teslamate_status',
-          'files_new') | default('—') }} | {{ state_attr('sensor.backup_teslamate_status',
-          'files_changed') | default('—') }} | {{ state_attr('sensor.backup_teslamate_status',
-          'snapshot_count') | default('—') }} |
-
-      - type: logbook
-        title: Backup-Verlauf
-        hours_to_show: 168
-        target:
-          entity_id:
-            - sensor.backup_overall_status
-            - sensor.backup_teslamate_status
-            - sensor.backup_seafile_status
-            - sensor.backup_paperless_ngx
+              | **Teslamate** | {{ state_attr('sensor.backup_teslamate_status',
+              'files_new') | default('—') }} | {{ state_attr('sensor.backup_teslamate_status',
+              'files_changed') | default('—') }} | {{ state_attr('sensor.backup_teslamate_status',
+              'snapshot_count') | default('—') }} |
+          - type: logbook
+            title: Backup-Verlauf k3s
+            hours_to_show: 168
+            target:
+              entity_id:
+                - sensor.backup_overall_status
+                - sensor.backup_teslamate_status
+                - sensor.backup_seafile_status
+                - sensor.backup_paperless_ngx
 
   # ===========================================================================
   # NETZWERK
@@ -286,6 +281,26 @@ views:
     max_columns: 4
     cards: []
     sections:
+      - type: grid
+        cards:
+          - type: entities
+            title: 🌐 Erreichbarkeit
+            entities:
+              - entity: binary_sensor.home_assistant
+                name: Home Assistant
+                state_color: true
+              - entity: binary_sensor.immich
+                name: Immich
+                state_color: true
+              - entity: binary_sensor.paperless
+                name: Paperless
+                state_color: true
+              - entity: binary_sensor.seafile
+                name: Seafile
+                state_color: true
+              - entity: binary_sensor.freshrss
+                name: FreshRSS
+                state_color: true
       - type: grid
         cards:
           - type: entities
