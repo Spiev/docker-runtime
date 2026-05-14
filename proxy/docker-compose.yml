@@ -1,7 +1,7 @@
 ---
 services:
   certbot-init:
-    image: certbot/certbot@sha256:78a7eaa40af657301e25731297b6e73646c695370d17e9bb03189fa82966d65c
+    image: certbot/certbot@sha256:0107d084c225631fc64a8313e19adb07275f7296fde338f7dfa93986c80b2e3e
     entrypoint: /bin/sh
     command: -c 'test -d /etc/letsencrypt/live/${DOMAIN1} || certbot certonly -v --standalone -v -d $DOMAIN1 -d $DOMAIN2 -d $DOMAIN3 -d $DOMAIN4 -d $DOMAIN5 -m $EMAIL --force-renewal --agree-tos'
     # Initial recreation when new host is added
@@ -11,7 +11,7 @@ services:
     volumes:
       - cert_volume:/etc/letsencrypt
   nginx:
-    image: nginx:1.30.0-alpine@sha256:0272e4604ed93c1792f03695a033a6e8546840f86e0de20a884bb17d2c924883
+    image: nginx:1.31.0-alpine@sha256:f105e3f12187c58ddc3acd09bbe4b9e4a9ab1df855d3d0e511b641077b5e988e
     entrypoint: /bin/sh
     command: -c 'while :; do sleep 6h && wait $${!}; nginx -s reload; done & /docker-entrypoint.sh nginx -g "daemon off;error_log /dev/stdout debug;"'
     ports:
@@ -38,7 +38,7 @@ services:
         required: true
     restart: unless-stopped      
   certbot:
-    image: certbot/certbot@sha256:78a7eaa40af657301e25731297b6e73646c695370d17e9bb03189fa82966d65c
+    image: certbot/certbot@sha256:0107d084c225631fc64a8313e19adb07275f7296fde338f7dfa93986c80b2e3e
     entrypoint: /bin/sh
     command: -c 'trap exit TERM; while :; do certbot renew; sleep 24h && wait $${!}; done;'
     depends_on:
