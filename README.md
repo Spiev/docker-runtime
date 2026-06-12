@@ -115,11 +115,9 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 ```
 ├── .github/
 │   ├── renovate.json               # Automated Docker image updates
-│   ├── workflows/
-│   │   ├── claude-pr-review.yml    # Automated Claude AI review for every PR
-│   │   └── renovate.yml            # Runs Renovate via GitHub Actions (every 6h)
-│   └── scripts/
-│       └── pr-review.py            # Claude review logic (fetches upstream release notes)
+│   └── workflows/
+│       ├── claude.yml              # On-demand @claude assistant for PRs/issues
+│       └── renovate.yml            # Runs Renovate via GitHub Actions (every 6h)
 ├── proxy/              # Nginx reverse proxy + Let's Encrypt
 ├── homeassistant/      # Home automation stack (config templates: *.yaml.example)
 ├── immich/             # Photo management
@@ -437,17 +435,7 @@ crontab -e
 # Add: 0 4,8,12,16,20,0 * * * /path/to/scripts/nginx_update.sh >> /path/to/logs/nginx_update.log 2>&1
 ```
 
-**Automated Claude PR Review:**
-
-Every PR (including all Renovate PRs) is automatically reviewed by Claude AI via `.github/workflows/claude-pr-review.yml`. The review is posted as a PR comment and includes:
-
-- **Type** (Patch/Minor/Major/Security), **Risk**, and a one-line **Change** summary
-- **Security** — flags CVEs, GHSA advisories, or security-relevant changes
-- **Action** — flags if manual testing is required
-
-For Renovate PRs, the script fetches release notes directly from the upstream GitHub repository and links to each individual release for quick navigation. Repos without GitHub releases fall back to the Renovate PR body.
-
-Required GitHub secrets: `CLAUDE_API_KEY` (Anthropic API key), `GITHUB_TOKEN` (auto-provided), `RENOVATE_APP_ID` + `RENOVATE_APP_PRIVATE_KEY` (GitHub App for Renovate).
+Required GitHub secrets: `GITHUB_TOKEN` (auto-provided), `RENOVATE_APP_ID` + `RENOVATE_APP_PRIVATE_KEY` (GitHub App for Renovate).
 
 **GitHub App permissions** (Repository):
 - Checks: Read & Write
@@ -466,7 +454,7 @@ Required GitHub secrets: `CLAUDE_API_KEY` (Anthropic API key), `GITHUB_TOKEN` (a
 
 **Other Services (manual deployment):**
 1. Renovate creates PRs when new versions are available
-2. Review Claude summary and linked release notes, then merge PR
+2. Review the Renovate summary and linked release notes, then merge PR
 3. Deploy update:
 ```bash
 cd <service-directory>
