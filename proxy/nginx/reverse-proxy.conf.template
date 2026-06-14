@@ -7,6 +7,7 @@
 # - DOMAIN3: FreshRSS (RSS Feed Reader) — k3s via Traefik
 # - DOMAIN4: HomeAssistant (SmartHome System) — Docker on raspberrypi
 # - DOMAIN5: Seafile (File Storage) — k3s via Traefik
+# - DOMAIN6: Tesla Fleet API public key (TeslaMate) — static file only, no backend
 #
 # Environment variables (set in docker-compose.yml from .env):
 # - ${DOMAIN1}–${DOMAIN5}: Domain names for each service
@@ -498,5 +499,55 @@ server {
 
         include /etc/nginx/includes/proxy-headers.conf;
         proxy_pass http://seafile_backend;
+    }
+}
+
+
+# ============================================================================
+# VIRTUAL HOST: DOMAIN6 - Tesla Fleet API public key (TeslaMate)
+# ============================================================================
+# Service: Static hosting of the Tesla third-party public key required for
+#          Fleet API partner registration. No backend — every other path 404s.
+# Backend: none (static file only)
+# Key file: nginx/static/.well-known/appspecific/com.tesla.3p.public-key.pem
+#           → mounted at /var/www/html inside the container
+# Note: Tesla validates this domain (valid CA cert + reachable key) when the
+#       developer app is created and at each partner_accounts registration.
+# ============================================================================
+
+server {
+    listen 443 ssl;
+    server_name ${DOMAIN6};
+
+    # ────────────────────────────────────────────────────────────────────────
+    # SSL Certificate Configuration (shared SAN cert, see DOMAIN1)
+    # ────────────────────────────────────────────────────────────────────────
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN1}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN1}/privkey.pem;
+
+    include /etc/nginx/includes/ssl-config.conf;
+    include /etc/nginx/includes/security-headers.conf;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Connection Limiting
+    # ────────────────────────────────────────────────────────────────────────
+    limit_conn conn_limit 10;
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Locations
+    # ────────────────────────────────────────────────────────────────────────
+
+    # Tesla Fleet API partner public key (static, no backend)
+    location = /.well-known/appspecific/com.tesla.3p.public-key.pem {
+        limit_req zone=general_limit burst=20 nodelay;
+
+        root /var/www/html;
+        default_type application/x-pem-file;
+        add_header Cache-Control "public, max-age=3600";
+    }
+
+    # Nothing else is served on this host
+    location / {
+        return 404;
     }
 }
