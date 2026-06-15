@@ -336,7 +336,7 @@ views:
       - type: grid
         cards:
           - type: entities
-            title: Home Assistant Version
+            title: Home Assistant Software
             entities:
               - entity: binary_sensor.docker_hub_update_available
                 name: Update verfügbar
