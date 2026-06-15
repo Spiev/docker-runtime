@@ -336,10 +336,10 @@ views:
       - type: grid
         cards:
           - type: entities
-            title: Home Assistant Software
+            title: Home Assistant
             entities:
               - entity: binary_sensor.docker_hub_update_available
-                name: Update verfügbar
+                name: Software Version
               - entity: sensor.docker_hub
           - type: entities
             title: Fotobibliothek
