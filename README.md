@@ -22,7 +22,6 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 - **Home Assistant** - Home automation hub
 - **Mosquitto** - MQTT broker for IoT devices
 - **Matter Hub** - Matter protocol bridge
-- **Music Assistant** - Music aggregation service
 
 ### Media & Documents
 - **Immich** - Photo and video management with ML features
