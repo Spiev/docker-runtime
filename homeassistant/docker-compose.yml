@@ -6,7 +6,7 @@ services:
       - /dev/ttyACM0 # mappes zigbee Dongel to container
     network_mode: "host"
     volumes:
-      - './homeassistant/config:/config'
+      - "./homeassistant/config:/config"
     cap_add:
       - NET_ADMIN
       - NET_RAW
@@ -33,21 +33,3 @@ services:
       - .env
     volumes:
       - $PWD/home-assistant-matter-hub:/data
-  music-assistant:
-    image: ghcr.io/music-assistant/server:2.9.4@sha256:e5dbb44e9dc92ff95dd2b15a9176b238f4e0969aed89850bf428b3d424640ca3
-    container_name: musicassistant
-    restart: unless-stopped
-    # Network mode must be set to host for MA to work correctly
-    network_mode: "host"
-    volumes:
-      - ./musicassistant/data:/data/
-    # privileged caps (and security-opt) needed to mount smb folders within the container
-    cap_add:
-      - SYS_ADMIN
-      - DAC_READ_SEARCH
-    security_opt:
-      - apparmor:unconfined
-    environment:
-      # Provide logging level as environment variable.
-      # default=info, possible=(critical, error, warning, info, debug)
-      - LOG_LEVEL=error
