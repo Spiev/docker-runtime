@@ -4,7 +4,7 @@
   "dependencyDashboard": false,
   "pinDigests": true,
   "timezone": "Europe/Berlin",
-  "schedule": ["* 0 * * *"],
+  "schedule": ["after 1am and before 5am"],
   "prHourlyLimit": 0,
   "packageRules": [
     {
@@ -19,7 +19,7 @@
       "automerge": false
     },
     {
-      "description": "Proxy (nginx, certbot) is the first line of defense — check on every workflow run (every 6 hours)",
+      "description": "Proxy (nginx, certbot) is the first line of defense — no schedule window, so it updates on every workflow run (every 2 hours)",
       "matchFileNames": ["proxy/docker-compose.yml"],
       "schedule": ["at any time"]
     },
