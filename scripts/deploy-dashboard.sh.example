@@ -37,11 +37,14 @@ source "$ENV_FILE"
 echo "Pulling latest changes..."
 git -C ~/docker pull --ff-only
 
-echo "Deploying dashboard..."
-DASHBOARD_SRC=~/docker/homeassistant.k3s/dashboards/homelab.yaml
-DASHBOARD_DST=~/docker/homeassistant/homeassistant/config/dashboards/homelab.yaml
-mkdir -p "$(dirname "$DASHBOARD_DST")"
-cp "$DASHBOARD_SRC" "$DASHBOARD_DST"
+echo "Deploying dashboards..."
+DASHBOARD_SRC_DIR=~/docker/homeassistant.k3s/dashboards
+DASHBOARD_DST_DIR=~/docker/homeassistant/homeassistant/config/dashboards
+mkdir -p "$DASHBOARD_DST_DIR"
+for src in "$DASHBOARD_SRC_DIR"/*.yaml; do
+    echo "  - $(basename "$src")"
+    cp "$src" "$DASHBOARD_DST_DIR/"
+done
 
 echo "Reloading Home Assistant config..."
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \

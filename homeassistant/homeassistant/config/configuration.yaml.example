@@ -100,6 +100,12 @@ lovelace:
       title: Homelab
       icon: mdi:home
       show_in_sidebar: true
+    licht-dashboard:
+      mode: yaml
+      filename: dashboards/licht.yaml
+      title: Licht
+      icon: mdi:lightbulb-group
+      show_in_sidebar: true
 
 # =============================================================================
 # Logging

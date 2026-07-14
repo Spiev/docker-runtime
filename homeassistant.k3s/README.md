@@ -8,9 +8,10 @@ Dieser Ordner enthält HA-Konfiguration und Dashboards die zur k3s-Infrastruktur
 
 | Datei | Inhalt |
 |---|---|
-| [dashboards/backup-k3s.yaml](dashboards/backup-k3s.yaml) | Homelab-Dashboard: Hardware, Backup Pi1, Backup k3s, Services |
+| [dashboards/homelab.yaml](dashboards/homelab.yaml) | Homelab-Dashboard: Hardware, Backup, Netzwerk, Services |
+| [dashboards/licht.yaml](dashboards/licht.yaml) | Licht-Dashboard: alle Lichter nach Raum, Tile-Karten mit Dimmer |
 
-Das Dashboard lebt im Code — Änderungen im Repo werden automatisch via Cron in HA übernommen.
+Die Dashboards leben im Code — Änderungen im Repo werden automatisch via Cron in HA übernommen. Das Deploy-Script kopiert **alle** `dashboards/*.yaml`; ein neues Dashboard-File wird also ohne Script-Anpassung übernommen.
 
 ### Einmalig: HA konfigurieren
 
@@ -19,13 +20,21 @@ Das Dashboard lebt im Code — Änderungen im Repo werden automatisch via Cron i
 ```yaml
 lovelace:
   dashboards:
-    backup-k3s:
+    homelab-dashboard:
       mode: yaml
-      filename: dashboards/backup-k3s.yaml
+      filename: dashboards/homelab.yaml
       title: Homelab
       icon: mdi:home
       show_in_sidebar: true
+    licht-dashboard:
+      mode: yaml
+      filename: dashboards/licht.yaml
+      title: Licht
+      icon: mdi:lightbulb-group
+      show_in_sidebar: true
 ```
+
+> **Hinweis:** Ein **neues** Dashboard in `lovelace.dashboards` wird erst nach einem **HA-Neustart** in der Sidebar registriert. Änderungen am Dashboard-*Inhalt* (bestehende YAML-Files) übernimmt der `reload_all` des Sync-Scripts dagegen ohne Neustart.
 
 **2. Deploy-Script einrichten:**
 
