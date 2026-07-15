@@ -23,16 +23,18 @@ lovelace:
     homelab-dashboard:
       mode: yaml
       filename: dashboards/homelab.yaml
-      title: Homelab
+      title: "11 Homelab"
       icon: mdi:home
       show_in_sidebar: true
     licht-dashboard:
       mode: yaml
       filename: dashboards/licht.yaml
-      title: Licht
+      title: "09 Licht"
       icon: mdi:lightbulb-group
       show_in_sidebar: true
 ```
+
+> **Sidebar-Reihenfolge:** HA sortiert die Dashboards alphabetisch nach `title` (Ziffern vor Buchstaben; „Übersicht"/Einstellungen sind fest gepinnt). Das Zahlen-Präfix im Titel bestimmt also die Position. Alternativ ginge Drag&Drop unter Profil → „Seitenleiste bearbeiten" — das ist aber pro Benutzer gespeichert und nicht versioniert. Ein `title`-Wechsel wird erst nach **HA-Neustart** in der Sidebar sichtbar.
 
 > **Hinweis:** Ein **neues** Dashboard in `lovelace.dashboards` wird erst nach einem **HA-Neustart** in der Sidebar registriert. Änderungen am Dashboard-*Inhalt* (bestehende YAML-Files) übernimmt der `reload_all` des Sync-Scripts dagegen ohne Neustart.
 

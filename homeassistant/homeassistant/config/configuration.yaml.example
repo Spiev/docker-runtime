@@ -94,16 +94,18 @@ http:
 # und via deploy-dashboard.sh.example automatisch aus dem Git-Repo aktualisiert.
 lovelace:
   dashboards:
+    # Sidebar-Reihenfolge: HA sortiert Dashboards alphabetisch nach title,
+    # daher Zahlen-Praefix zum Ordnen (Ziffern sortieren vor Buchstaben).
     homelab-dashboard:
       mode: yaml
       filename: dashboards/homelab.yaml
-      title: Homelab
+      title: "11 Homelab"
       icon: mdi:home
       show_in_sidebar: true
     licht-dashboard:
       mode: yaml
       filename: dashboards/licht.yaml
-      title: Licht
+      title: "09 Licht"
       icon: mdi:lightbulb-group
       show_in_sidebar: true
 
