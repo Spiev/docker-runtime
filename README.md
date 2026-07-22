@@ -115,7 +115,6 @@ A production-ready Docker Compose setup for self-hosted services on Raspberry Pi
 ├── .github/
 │   ├── renovate.json               # Automated Docker image updates
 │   └── workflows/
-│       ├── claude.yml              # On-demand @claude assistant for PRs/issues
 │       └── renovate.yml            # Runs Renovate via GitHub Actions (every 6h)
 ├── proxy/              # Nginx reverse proxy + Let's Encrypt
 ├── homeassistant/      # Home automation stack (config templates: *.yaml.example)
