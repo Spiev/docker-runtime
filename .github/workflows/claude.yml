@@ -16,6 +16,6 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 
-      - uses: anthropics/claude-code-action@b76a0776ae74036e77cd11018083743453d7ad35 # v1
+      - uses: anthropics/claude-code-action@fa7e2f0a29a126f0b81cdcf360561b36e44cf608 # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
