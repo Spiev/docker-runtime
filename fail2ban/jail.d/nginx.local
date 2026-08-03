@@ -34,6 +34,19 @@ maxretry = 10
 findtime = 600
 chain = DOCKER-USER
 
+[immich-auth]
+enabled = true
+ignoreip = 127.0.0.1/8 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
+logpath = /home/stefan/docker/proxy/nginx/logs/access.log
+# Matches ONLY POST /api/auth/login with 401 (wrong credentials).
+# Does NOT match the 401 burst a client with an expired token produces on
+# other endpoints, so legitimate mobile apps never self-ban here.
+filter = immich-auth
+bantime = 24h
+maxretry = 5
+findtime = 600
+chain = DOCKER-USER
+
 [nginx-malicious-uri]
 enabled = true
 # Ignore private networks
