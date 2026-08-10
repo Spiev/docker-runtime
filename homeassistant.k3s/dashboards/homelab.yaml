@@ -358,6 +358,18 @@ views:
               - entity: sensor.http_192_168_178_113_8000_redis_status
                 name: Redis-Status
               - entity: sensor.http_192_168_178_113_8000_dokumente_im_posteingang
+          - type: entities
+            title: Paperless
+            entities:
+              - entity: update.https_paperless_miesem_de_software
+                name: Software Version
+              - entity: sensor.https_paperless_miesem_de_datenbank_status
+                name: Datenbank-Status
+              - entity: sensor.https_paperless_miesem_de_plausibilitatsstatus
+                name: Plausibilitätsstatus
+              - entity: sensor.https_paperless_miesem_de_redis_status
+                name: Redis-Status
+              - entity: sensor.https_paperless_miesem_de_dokumente_im_posteingang
       - type: grid
         cards:
           - type: entities
