@@ -358,6 +358,7 @@ views:
               - entity: sensor.https_paperless_miesem_de_redis_status
                 name: Redis-Status
               - entity: sensor.https_paperless_miesem_de_dokumente_im_posteingang
+                name: Posteingang
       - type: grid
         cards:
           - type: entities
