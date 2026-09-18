@@ -320,19 +320,6 @@ views:
                 name: FTL-Update verfügbar
               - entity: update.pi_hole_web_update_verfugbar
                 name: Web-Update verfügbar
-          - type: entities
-            title: 🧱 Nginx Rev-Proxy
-            entities:
-              - entity: sensor.nginx_version
-                name: Version
-                icon: mdi:diversify
-              - entity: sensor.nginx_update_status_2
-                name: Status
-                icon: mdi:timer
-              - entity: sensor.nginx_last_check
-                attribute: last_run
-                name: Check Time
-                icon: mdi:calendar-check
       - type: grid
         cards:
           - type: entities
