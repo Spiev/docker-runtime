@@ -51,11 +51,11 @@ views:
     cards: []
     sections:
       - type: grid
-        title: Pi1
+        title: k3s-a1
         cards:
           - type: entity
             entity: sensor.restic_backup_status
-            name: Backup Status Pi1
+            name: Backup Status k3s-a1
             icon: mdi:backup-restore
             state_color: true
           - type: markdown
@@ -113,7 +113,7 @@ views:
         cards:
           - type: entity
             entity: sensor.backup_overall_status
-            name: k3s Backup
+            name: k3s Server Backup
             icon: mdi:backup-restore
             state_color: true
           - type: markdown
@@ -304,7 +304,7 @@ views:
       - type: grid
         cards:
           - type: entities
-            title: 🖥️ RaspberryPi Updates
+            title: 🖥️ k3s-a1 Updates
             entities:
               - entity: sensor.rpi_system_updates
                 name: System-Updates
